@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,12 +8,38 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { User, Mail, Shield, ArrowLeft, Edit2, Check, X, Camera, ShieldCheck, UserCircle } from 'lucide-react';
+import { 
+  User, 
+  Mail, 
+  Shield, 
+  ArrowLeft, 
+  Edit2, 
+  Check, 
+  X, 
+  Camera, 
+  ShieldCheck, 
+  UserCircle, 
+  Briefcase,
+  Plus,
+  Wrench,
+  Droplets,
+  Zap,
+  Brush,
+  Car
+} from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/avatar';
+
+const PREDEFINED_SKILLS = [
+  { name: 'Mechanic', icon: <Wrench className="w-3 h-3" /> },
+  { name: 'Plumber', icon: <Droplets className="w-3 h-3" /> },
+  { name: 'Electrician', icon: <Zap className="w-3 h-3" /> },
+  { name: 'Cleaner', icon: <Brush className="w-3 h-3" /> },
+  { name: 'Driver', icon: <Car className="w-3 h-3" /> },
+];
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -22,6 +49,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedPhotoUrl, setEditedPhotoUrl] = useState('');
+  const [editedSkills, setEditedSkills] = useState<string[]>([]);
+  const [customSkill, setCustomSkill] = useState('');
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !db) return null;
@@ -34,6 +63,7 @@ export default function ProfilePage() {
     if (profile) {
       setEditedName(profile.name || '');
       setEditedPhotoUrl(profile.photoUrl || '');
+      setEditedSkills(profile.skills || []);
     }
   }, [profile]);
 
@@ -71,6 +101,7 @@ export default function ProfilePage() {
     updateDocumentNonBlocking(userDocRef, {
       name: editedName.trim(),
       photoUrl: editedPhotoUrl.trim(),
+      skills: editedSkills,
     });
 
     toast({
@@ -84,7 +115,24 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setEditedName(profile?.name || '');
     setEditedPhotoUrl(profile?.photoUrl || '');
+    setEditedSkills(profile?.skills || []);
     setIsEditing(false);
+  };
+
+  const toggleSkill = (skill: string) => {
+    setEditedSkills(prev => 
+      prev.includes(skill) 
+        ? prev.filter(s => s !== skill) 
+        : [...prev, skill]
+    );
+  };
+
+  const addCustomSkill = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customSkill.trim() && !editedSkills.includes(customSkill.trim())) {
+      setEditedSkills([...editedSkills, customSkill.trim()]);
+      setCustomSkill('');
+    }
   };
 
   return (
@@ -161,6 +209,69 @@ export default function ProfilePage() {
                   <p className="text-xs text-muted-foreground italic">Paste a link to an image file.</p>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                  <Briefcase className="w-4 h-4" />
+                  Skills & Services
+                </div>
+                
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                      {PREDEFINED_SKILLS.map((skill) => (
+                        <Button
+                          key={skill.name}
+                          variant={editedSkills.includes(skill.name) ? "default" : "outline"}
+                          size="sm"
+                          className="gap-2 rounded-full"
+                          onClick={() => toggleSkill(skill.name)}
+                        >
+                          {skill.icon}
+                          {skill.name}
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    <form onSubmit={addCustomSkill} className="flex gap-2">
+                      <Input
+                        value={customSkill}
+                        onChange={(e) => setCustomSkill(e.target.value)}
+                        placeholder="Add custom skill..."
+                        className="h-9"
+                      />
+                      <Button type="submit" size="sm" variant="secondary" className="gap-2">
+                        <Plus className="w-4 h-4" />
+                        Add
+                      </Button>
+                    </form>
+
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {editedSkills.filter(s => !PREDEFINED_SKILLS.some(ps => ps.name === s)).map(skill => (
+                        <Badge key={skill} variant="secondary" className="gap-1 pr-1">
+                          {skill}
+                          <X 
+                            className="w-3 h-3 cursor-pointer hover:text-destructive" 
+                            onClick={() => toggleSkill(skill)}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {profile?.skills && profile.skills.length > 0 ? (
+                      profile.skills.map((skill: string) => (
+                        <Badge key={skill} variant="outline" className="px-3 py-1">
+                          {skill}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No skills listed yet.</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">

@@ -32,6 +32,13 @@
           "type": "string",
           "description": "URL to the user's profile photo."
         },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of skills or service categories the user provides."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
