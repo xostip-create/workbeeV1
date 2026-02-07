@@ -50,5 +50,10 @@ service cloud.firestore {
         allow create: if isChatParticipant(jobId);
       }
     }
+
+    match /payments/{paymentId} {
+      allow read: if isSignedIn() && (resource.data.customerId == request.auth.uid || isJobOwner(resource.data.jobId));
+      allow create: if isSignedIn();
+    }
   }
 }

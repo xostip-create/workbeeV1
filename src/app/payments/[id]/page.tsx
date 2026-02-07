@@ -1,20 +1,69 @@
+
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, CreditCard, Lock, ShieldCheck, Info } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, CreditCard, Lock, ShieldCheck, Info, Loader2 } from 'lucide-react';
+import { initializePayment } from '@/app/actions/payments';
+import { useToast } from '@/hooks/use-toast';
 
-/**
- * Placeholder Payment Screen.
- * Displays a visual breakdown of a transaction and a non-functional pay button.
- */
 export default function PaymentPage() {
   const params = useParams();
   const router = useRouter();
-  const paymentId = params.id;
+  const jobId = params.id as string;
+  const { user } = useUser();
+  const db = useFirestore();
+  const { toast } = useToast();
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  const jobRef = useMemoFirebase(() => {
+    if (!db || !jobId) return null;
+    return doc(db, 'jobs', jobId);
+  }, [db, jobId]);
+
+  const { data: job, isLoading } = useDoc(jobRef);
+
+  const handlePayNow = async () => {
+    if (!user || !job || !user.email) return;
+
+    setIsInitializing(true);
+    try {
+      const amount = 15000; // Fixed amount for demo
+      const { url } = await initializePayment(jobId, user.email, amount);
+      window.location.href = url;
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Payment Error',
+        description: error.message || 'Failed to connect to Paystack. Check your API keys.',
+      });
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-8 flex justify-center items-center">
+        <Skeleton className="h-[400px] w-full max-w-md" />
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-8 text-center">
+        <h2 className="text-xl font-bold">Job not found</h2>
+        <Button onClick={() => router.back()} className="mt-4">Go Back</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -31,7 +80,7 @@ export default function PaymentPage() {
               Secure Payment
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Review and complete your transaction.
+              Review and complete your payment for: <span className="font-bold text-foreground">"{job.title}"</span>
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -61,31 +110,37 @@ export default function PaymentPage() {
                 Your payment is safely held in escrow. Funds are only released to the worker once you confirm the job is complete.
               </div>
             </div>
-            
-            <div className="text-center pt-2">
-               <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold bg-muted/50 px-2 py-1 rounded">
-                Reference: {paymentId || 'P-001'}
-              </span>
-            </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full h-12 text-lg font-bold gap-2" disabled>
-              <Lock className="w-4 h-4" />
-              Pay Now
+            <Button 
+              className="w-full h-12 text-lg font-bold gap-2" 
+              onClick={handlePayNow}
+              disabled={isInitializing}
+            >
+              {isInitializing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Pay with Paystack
+                </>
+              )}
             </Button>
             <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
               <Lock className="w-3 h-3" />
-              <span>Payments are currently disabled in this demo.</span>
+              <span>Payments are processed securely via Paystack.</span>
             </div>
           </CardFooter>
         </Card>
 
-        {/* Placeholder trust badges */}
-        <div className="mt-8 flex flex-col items-center gap-4 opacity-50 grayscale transition-all hover:opacity-100 hover:grayscale-0">
+        <div className="mt-8 flex flex-col items-center gap-4 opacity-70 grayscale transition-all hover:opacity-100 hover:grayscale-0">
           <div className="flex gap-4">
-            <div className="w-12 h-8 bg-muted rounded border flex items-center justify-center font-bold text-[8px]">VISA</div>
-            <div className="w-12 h-8 bg-muted rounded border flex items-center justify-center font-bold text-[8px]">MC</div>
-            <div className="w-12 h-8 bg-muted rounded border flex items-center justify-center font-bold text-[8px]">VERVE</div>
+            <div className="w-12 h-8 bg-white border rounded flex items-center justify-center font-bold text-[8px] shadow-sm">VISA</div>
+            <div className="w-12 h-8 bg-white border rounded flex items-center justify-center font-bold text-[8px] shadow-sm">MC</div>
+            <div className="w-12 h-8 bg-white border rounded flex items-center justify-center font-bold text-[8px] shadow-sm">VERVE</div>
           </div>
           <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-medium">
             Secured by WorkBee Payment Gateway
