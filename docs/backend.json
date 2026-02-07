@@ -99,6 +99,18 @@
             "Completed"
           ]
         },
+        "totalPrice": {
+          "type": "number",
+          "description": "The final agreed price for the job."
+        },
+        "commissionAmount": {
+          "type": "number",
+          "description": "The platform commission amount (10%) deducted from the total."
+        },
+        "workerPayout": {
+          "type": "number",
+          "description": "The amount due to the worker after commission deduction."
+        },
         "isReviewed": {
           "type": "boolean",
           "description": "Whether the customer has reviewed the worker for this job."
@@ -263,6 +275,10 @@
         "jobId": {
           "type": "string",
           "description": "The ID of the job this payment is for."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "The UID of the customer who made the payment."
         },
         "amount": {
           "type": "number",

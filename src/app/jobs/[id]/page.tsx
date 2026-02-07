@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, collection, query, orderBy, where, limit } from 'firebase/firestore';
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,8 @@ import {
   CheckCircle2,
   AlertCircle,
   PlayCircle,
-  Star
+  Star,
+  Banknote
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Separator } from '@/components/ui/separator';
 
 export default function JobDetailsPage() {
   const params = useParams();
@@ -71,6 +73,19 @@ export default function JobDetailsPage() {
   }, [db, jobId]);
 
   const { data: applications, isLoading: isLoadingApps } = useCollection(applicationsQuery);
+
+  // Query for the accepted proposal to calculate commission
+  const acceptedProposalQuery = useMemoFirebase(() => {
+    if (!db || !jobId) return null;
+    return query(
+      collection(db, 'jobs', jobId, 'proposals'),
+      where('status', '==', 'Accepted'),
+      limit(1)
+    );
+  }, [db, jobId]);
+
+  const { data: acceptedProposals } = useCollection(acceptedProposalQuery);
+  const acceptedProposal = acceptedProposals?.[0];
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
@@ -172,7 +187,25 @@ export default function JobDetailsPage() {
 
   const handleMarkAsCompleted = () => {
     if (!jobDocRef) return;
-    updateDocumentNonBlocking(jobDocRef, { status: 'Completed' });
+    
+    // Calculate commission (10%) and payout
+    let totalPrice = 0;
+    let commissionAmount = 0;
+    let workerPayout = 0;
+
+    if (acceptedProposal) {
+      totalPrice = acceptedProposal.amount;
+      commissionAmount = totalPrice * 0.10;
+      workerPayout = totalPrice - commissionAmount;
+    }
+
+    updateDocumentNonBlocking(jobDocRef, { 
+      status: 'Completed',
+      totalPrice,
+      commissionAmount,
+      workerPayout
+    });
+    
     toast({ title: "Job Completed", description: "Great work! This job has been marked as finished." });
   };
 
@@ -334,7 +367,7 @@ export default function JobDetailsPage() {
             )}
 
             {(isInProgress || isCompleted) && (isOwner || isSelectedWorker) && (
-              <div className="pt-6 border-t">
+              <div className="pt-6 border-t space-y-4">
                 <div className={`border rounded-lg p-6 flex flex-col sm:flex-row items-center justify-between gap-4 ${isCompleted ? 'bg-blue-50 border-blue-100' : 'bg-green-50 border-green-100'}`}>
                   <div className="flex items-start gap-3">
                     {isCompleted ? <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5" /> : <PlayCircle className="w-5 h-5 text-green-600 mt-0.5" />}
@@ -365,6 +398,38 @@ export default function JobDetailsPage() {
                     )}
                   </div>
                 </div>
+
+                {isCompleted && job.totalPrice !== undefined && (
+                  <Card className="border-blue-200 bg-blue-50/30 overflow-hidden shadow-none">
+                    <CardHeader className="py-4 px-6 border-b bg-blue-100/50">
+                      <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-800">
+                        <Banknote className="w-4 h-4" />
+                        Payment Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-blue-700">Agreed Total Price</span>
+                        <span className="font-bold text-foreground text-lg">₦{job.totalPrice.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm text-destructive">
+                        <div className="flex items-center gap-1">
+                          <span>App Commission (10%)</span>
+                          <AlertCircle className="w-3 h-3" />
+                        </div>
+                        <span className="font-medium">- ₦{(job.commissionAmount || 0).toLocaleString()}</span>
+                      </div>
+                      <Separator className="bg-blue-200" />
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-blue-900">Worker Payout</span>
+                        <span className="font-black text-green-600 text-xl">₦{(job.workerPayout || 0).toLocaleString()}</span>
+                      </div>
+                      <p className="text-[10px] text-blue-600 italic">
+                        The commission is used to maintain the WorkBee hive and ensure platform safety.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
