@@ -27,7 +27,8 @@ import {
   Send,
   CheckCircle2,
   AlertCircle,
-  PlayCircle
+  PlayCircle,
+  Star
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -43,9 +44,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-/**
- * Job Details Page with Status Management (Open, In Progress, Completed).
- */
 export default function JobDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -54,7 +52,6 @@ export default function JobDetailsPage() {
   const { user } = useUser();
   const { toast } = useToast();
 
-  // Job Data
   const jobDocRef = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return doc(db, 'jobs', jobId);
@@ -62,14 +59,12 @@ export default function JobDetailsPage() {
 
   const { data: job, isLoading } = useDoc(jobDocRef);
 
-  // User Profile Data (for applicant name)
   const userDocRef = useMemoFirebase(() => {
     if (!user || !db) return null;
     return doc(db, 'users', user.uid);
   }, [user, db]);
   const { data: userProfile } = useDoc(userDocRef);
 
-  // Applications Data
   const applicationsQuery = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return query(collection(db, 'jobs', jobId, 'applications'), orderBy('appliedAt', 'desc'));
@@ -82,7 +77,11 @@ export default function JobDetailsPage() {
   const [editedDescription, setEditedDescription] = useState('');
   const [isApplying, setIsApplying] = useState(false);
 
-  // Sync state with job data when loaded
+  // Review state
+  const [rating, setRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
   useEffect(() => {
     if (job) {
       setEditedTitle(job.title || '');
@@ -127,87 +126,75 @@ export default function JobDetailsPage() {
 
   const handleSave = () => {
     if (!jobDocRef) return;
-    
     updateDocumentNonBlocking(jobDocRef, {
       title: editedTitle.trim(),
       description: editedDescription.trim(),
     });
-    
     setIsEditing(false);
-    toast({
-      title: "Job Updated",
-      description: "Your changes have been saved to the hive.",
-    });
+    toast({ title: "Job Updated", description: "Your changes have been saved." });
   };
 
   const handleDelete = () => {
     if (!jobDocRef) return;
-    
     deleteDocumentNonBlocking(jobDocRef);
-    toast({
-      title: "Job Deleted",
-      description: "The request has been removed from the hive.",
-    });
+    toast({ title: "Job Deleted", description: "The request has been removed." });
     router.push('/jobs');
   };
 
   const handleApply = () => {
     if (!user || !db || !jobId || !userProfile) return;
-    
     setIsApplying(true);
     const appsRef = collection(db, 'jobs', jobId, 'applications');
-    
     addDocumentNonBlocking(appsRef, {
       applicantId: user.uid,
       applicantName: userProfile.name || 'Anonymous User',
       appliedAt: new Date().toISOString(),
-    })
-    .then(() => {
-      toast({
-        title: "Application Sent!",
-        description: "You've successfully applied for this job.",
-      });
+    }).then(() => {
+      toast({ title: "Application Sent!", description: "You've successfully applied." });
       setIsApplying(false);
-    })
-    .catch(() => {
-      setIsApplying(false);
-    });
+    }).catch(() => setIsApplying(false));
   };
 
   const handleSelectWorker = (applicantId: string, applicantName: string) => {
     if (!jobDocRef || !db) return;
-
-    // 1. Update the Job - Status automatically becomes In Progress
     updateDocumentNonBlocking(jobDocRef, {
       selectedApplicantId: applicantId,
       selectedApplicantName: applicantName,
       status: 'In Progress',
     });
-
-    // 2. Create the Chat Room
     const chatRoomRef = doc(db, 'chatRooms', jobId);
     setDocumentNonBlocking(chatRoomRef, {
       jobId: jobId,
       participants: [job.customerId, applicantId]
     }, { merge: true });
-
-    toast({
-      title: "Worker Selected!",
-      description: `${applicantName} has been assigned. Status updated to In Progress.`,
-    });
+    toast({ title: "Worker Selected!", description: `${applicantName} has been assigned.` });
   };
 
   const handleMarkAsCompleted = () => {
     if (!jobDocRef) return;
-    
-    updateDocumentNonBlocking(jobDocRef, {
-      status: 'Completed',
-    });
-    
-    toast({
-      title: "Job Completed",
-      description: "Great work! This job has been marked as finished.",
-    });
+    updateDocumentNonBlocking(jobDocRef, { status: 'Completed' });
+    toast({ title: "Job Completed", description: "Great work! This job has been marked as finished." });
+  };
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!db || !user || !job.selectedApplicantId || rating === 0) return;
+    setIsSubmittingReview(true);
+    const reviewsRef = collection(db, 'users', job.selectedApplicantId, 'reviews');
+    addDocumentNonBlocking(reviewsRef, {
+      rating,
+      comment: reviewComment.trim(),
+      jobId: jobId,
+      reviewerId: user.uid,
+      reviewerName: userProfile?.name || 'Anonymous Customer',
+      createdAt: new Date().toISOString(),
+    }).then(() => {
+      if (jobDocRef) {
+        updateDocumentNonBlocking(jobDocRef, { isReviewed: true });
+      }
+      toast({ title: "Review Submitted", description: "Thank you for your feedback!" });
+      setIsSubmittingReview(false);
+    }).catch(() => setIsSubmittingReview(false));
   };
 
   return (
@@ -252,7 +239,6 @@ export default function JobDetailsPage() {
                       value={editedTitle} 
                       onChange={(e) => setEditedTitle(e.target.value)}
                       className="text-xl font-bold h-12"
-                      placeholder="e.g. Repair Kitchen Sink"
                     />
                   </div>
                 ) : (
@@ -278,7 +264,7 @@ export default function JobDetailsPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete this job request?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently remove your job posting from the WorkBee hive.
+                          This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -304,7 +290,6 @@ export default function JobDetailsPage() {
                     value={editedDescription}
                     onChange={(e) => setEditedDescription(e.target.value)}
                     className="min-h-[200px] text-lg leading-relaxed"
-                    placeholder="Describe the task details..."
                   />
                   <div className="flex gap-2 justify-end">
                     <Button variant="ghost" onClick={() => setIsEditing(false)} className="gap-2">
@@ -362,7 +347,7 @@ export default function JobDetailsPage() {
                           ? `This job was successfully completed by ${job.selectedApplicantName}.` 
                           : isOwner 
                             ? `You've hired ${job.selectedApplicantName}. Mark as completed when the work is done.` 
-                            : `You're working on this job! Coordinate with the owner via chat.`}
+                            : `You're working on this job! Coordinate via chat.`}
                       </p>
                     </div>
                   </div>
@@ -382,10 +367,62 @@ export default function JobDetailsPage() {
                 </div>
               </div>
             )}
+
+            {/* Review Section */}
+            {isCompleted && isOwner && !job.isReviewed && (
+              <div className="pt-8 mt-8 border-t border-dashed">
+                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  Rate & Review {job.selectedApplicantName}
+                </h3>
+                <form onSubmit={handleSubmitReview} className="space-y-4 bg-amber-50/50 p-6 rounded-xl border border-amber-100">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold text-amber-900">Your Rating</Label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRating(star)}
+                          className={`transition-transform hover:scale-110 ${rating >= star ? 'text-amber-500' : 'text-muted'}`}
+                        >
+                          <Star className={`w-8 h-8 ${rating >= star ? 'fill-current' : ''}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="review" className="text-sm font-bold text-amber-900">Your Experience</Label>
+                    <Textarea
+                      id="review"
+                      placeholder="How was the service? (optional)"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      className="bg-white"
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={rating === 0 || isSubmittingReview}
+                    className="bg-amber-600 hover:bg-amber-700 w-full"
+                  >
+                    {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                  </Button>
+                </form>
+              </div>
+            )}
+
+            {isCompleted && job.isReviewed && (
+               <div className="pt-4 text-center">
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 py-1 px-3">
+                    <Star className="w-3 h-3 mr-1 fill-amber-500" />
+                    Reviewed
+                  </Badge>
+               </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Applicants List for Creator */}
         {isOwner && isOpen && (
           <Card className="shadow-md">
             <CardHeader>
@@ -398,10 +435,7 @@ export default function JobDetailsPage() {
             </CardHeader>
             <CardContent>
               {isLoadingApps ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
+                <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
               ) : applications && applications.length > 0 ? (
                 <div className="divide-y">
                   {applications.map((app) => (
@@ -412,15 +446,11 @@ export default function JobDetailsPage() {
                         </div>
                         <div>
                           <p className="font-bold text-sm">{app.applicantName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Applied on {new Date(app.appliedAt).toLocaleDateString()}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Applied {new Date(app.appliedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="bg-green-500 text-white hover:bg-green-600"
+                        variant="secondary" size="sm" className="bg-green-500 text-white hover:bg-green-600"
                         onClick={() => handleSelectWorker(app.applicantId, app.applicantName)}
                       >
                         Select Worker
@@ -429,39 +459,11 @@ export default function JobDetailsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground italic">
-                  No applications yet.
-                </div>
+                <div className="text-center py-8 text-muted-foreground italic">No applications yet.</div>
               )}
             </CardContent>
           </Card>
         )}
-
-        {(isInProgress || isCompleted) && isOwner && (
-           <Card className="shadow-md border-none bg-muted/20">
-             <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center">
-                         <CheckCircle2 className="w-6 h-6" />
-                      </div>
-                      <div>
-                         <p className="text-xs font-bold uppercase text-muted-foreground">Assigned Worker</p>
-                         <p className="font-bold">{job.selectedApplicantName}</p>
-                      </div>
-                   </div>
-                   <Badge variant="outline" className="border-green-200 text-green-700 bg-white">
-                     Hired
-                   </Badge>
-                </div>
-             </CardContent>
-           </Card>
-        )}
-
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground italic">
-           <User className="w-3 h-3" />
-           <span>Posted by: {isOwner ? "You" : `User ID: ${job.customerId}`}</span>
-        </div>
       </div>
     </div>
   );

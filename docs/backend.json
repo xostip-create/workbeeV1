@@ -95,6 +95,10 @@
             "Completed"
           ]
         },
+        "isReviewed": {
+          "type": "boolean",
+          "description": "Whether the customer has reviewed the worker for this job."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
@@ -105,6 +109,46 @@
         "title",
         "description",
         "customerId"
+      ]
+    },
+    "Review": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Review",
+      "type": "object",
+      "description": "A review and rating left by a customer for a worker.",
+      "properties": {
+        "rating": {
+          "type": "number",
+          "description": "Star rating from 1 to 5."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional text feedback."
+        },
+        "jobId": {
+          "type": "string",
+          "description": "The ID of the job this review is associated with."
+        },
+        "reviewerId": {
+          "type": "string",
+          "description": "The UID of the customer who left the review."
+        },
+        "reviewerName": {
+          "type": "string",
+          "description": "The name of the customer who left the review."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the review was submitted."
+        }
+      },
+      "required": [
+        "rating",
+        "jobId",
+        "reviewerId",
+        "reviewerName",
+        "createdAt"
       ]
     },
     "JobApplication": {
@@ -198,6 +242,12 @@
         "$ref": "#/backend/entities/UserProfile"
       },
       "description": "Stores user profile information."
+    },
+    "/users/{userId}/reviews/{reviewId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Review"
+      },
+      "description": "Stores reviews received by a user (usually a worker)."
     },
     "/jobs/{jobId}": {
       "schema": {
