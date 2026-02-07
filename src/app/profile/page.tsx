@@ -8,11 +8,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { User, Mail, Shield, ArrowLeft, Edit2, Check, X } from 'lucide-react';
+import { User, Mail, Shield, ArrowLeft, Edit2, Check, X, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
+  const [editedPhotoUrl, setEditedPhotoUrl] = useState('');
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !db) return null;
@@ -30,8 +32,9 @@ export default function ProfilePage() {
   const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
 
   useEffect(() => {
-    if (profile?.name) {
-      setEditedName(profile.name);
+    if (profile) {
+      setEditedName(profile.name || '');
+      setEditedPhotoUrl(profile.photoUrl || '');
     }
   }, [profile]);
 
@@ -68,6 +71,7 @@ export default function ProfilePage() {
 
     updateDocumentNonBlocking(userDocRef, {
       name: editedName.trim(),
+      photoUrl: editedPhotoUrl.trim(),
     });
 
     toast({
@@ -80,6 +84,7 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setEditedName(profile?.name || '');
+    setEditedPhotoUrl(profile?.photoUrl || '');
     setIsEditing(false);
   };
 
@@ -96,9 +101,12 @@ export default function ProfilePage() {
         <Card className="shadow-lg">
           <CardHeader className="border-b bg-muted/30 flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                {profile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-              </div>
+              <Avatar className="w-20 h-20 border-2 border-background shadow-sm">
+                <AvatarImage src={profile?.photoUrl} alt={profile?.name} />
+                <AvatarFallback className="bg-primary text-white text-2xl font-bold">
+                  {profile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <CardTitle className="text-3xl font-bold">{profile?.name || 'User Profile'}</CardTitle>
                 <CardDescription>View and manage your account information</CardDescription>
@@ -119,19 +127,32 @@ export default function ProfilePage() {
                   Full Name
                 </div>
                 {isEditing ? (
-                  <div className="space-y-2">
-                    <Input
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                      placeholder="Enter your name"
-                      className="text-lg h-12"
-                      autoFocus
-                    />
-                  </div>
+                  <Input
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="text-lg h-12"
+                  />
                 ) : (
                   <p className="text-lg font-medium">{profile?.name || 'Not provided'}</p>
                 )}
               </div>
+
+              {isEditing && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                    <Camera className="w-4 h-4" />
+                    Profile Photo URL
+                  </div>
+                  <Input
+                    value={editedPhotoUrl}
+                    onChange={(e) => setEditedPhotoUrl(e.target.value)}
+                    placeholder="https://example.com/photo.jpg"
+                    className="text-lg h-12"
+                  />
+                  <p className="text-xs text-muted-foreground italic">Paste a link to an image file.</p>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">

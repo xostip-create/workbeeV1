@@ -5,8 +5,9 @@ import React, { useState, useEffect } from 'react';
 import { Search, Store, PlusCircle, LogIn, User as UserIcon, LogOut } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -16,12 +17,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const db = useFirestore();
   const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !db) return null;
+    return doc(db, 'users', user.uid);
+  }, [user, db]);
+
+  const { data: profile } = useDoc(userDocRef);
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear());
@@ -75,8 +84,9 @@ export default function Home() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile?.photoUrl} alt={profile?.name} />
                         <AvatarFallback className="bg-primary/10 text-primary">
-                          {user.email?.charAt(0).toUpperCase()}
+                          {profile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -84,7 +94,7 @@ export default function Home() {
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
+                        <p className="text-sm font-medium leading-none">{profile?.name || user.displayName || 'User'}</p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}
                         </p>

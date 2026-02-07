@@ -43,6 +43,7 @@ export default function SignupPage() {
         name: name,
         email: email,
         accountType: accountType,
+        photoUrl: '', // Initialize empty photo URL
         createdAt: new Date().toISOString(),
       });
 

@@ -28,6 +28,10 @@
             "Customer"
           ]
         },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL to the user's profile photo."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
