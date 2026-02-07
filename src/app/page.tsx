@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, Store, PlusCircle, BeeIcon } from 'lucide-react';
+import { Search, Store, PlusCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -83,7 +83,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 bg-white/50 border-t">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} E&amp;F WorkBee. All rights reserved.
           </p>
         </div>
