@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { User, Mail, Shield, ArrowLeft, Edit2, Check, X, Camera } from 'lucide-react';
+import { User, Mail, Shield, ArrowLeft, Edit2, Check, X, Camera, ShieldCheck, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -98,10 +97,10 @@ export default function ProfilePage() {
           </Link>
         </Button>
 
-        <Card className="shadow-lg">
-          <CardHeader className="border-b bg-muted/30 flex flex-row items-center justify-between">
+        <Card className="shadow-lg border-t-4 border-t-primary">
+          <CardHeader className="border-b bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Avatar className="w-20 h-20 border-2 border-background shadow-sm">
+              <Avatar className="w-20 h-20 border-2 border-background shadow-md">
                 <AvatarImage src={profile?.photoUrl} alt={profile?.name} />
                 <AvatarFallback className="bg-primary text-white text-2xl font-bold">
                   {profile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
@@ -109,13 +108,22 @@ export default function ProfilePage() {
               </Avatar>
               <div>
                 <CardTitle className="text-3xl font-bold">{profile?.name || 'User Profile'}</CardTitle>
-                <CardDescription>View and manage your account information</CardDescription>
+                <div className="mt-1">
+                  <Badge variant={profile?.accountType === 'Worker' ? 'default' : 'secondary'} className="flex items-center gap-1 w-fit">
+                    {profile?.accountType === 'Worker' ? (
+                      <ShieldCheck className="w-3 h-3" />
+                    ) : (
+                      <UserCircle className="w-3 h-3" />
+                    )}
+                    {profile?.accountType || 'Customer'}
+                  </Badge>
+                </div>
               </div>
             </div>
             {!isEditing && (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2 shrink-0">
                 <Edit2 className="w-4 h-4" />
-                Edit
+                Edit Profile
               </Button>
             )}
           </CardHeader>
@@ -167,10 +175,22 @@ export default function ProfilePage() {
                   <Shield className="w-4 h-4" />
                   Account Type
                 </div>
-                <div className="pt-1">
-                  <Badge variant={profile?.accountType === 'Worker' ? 'default' : 'secondary'} className="text-sm px-3 py-1">
-                    {profile?.accountType || 'Customer'}
-                  </Badge>
+                <div className="pt-2">
+                  <div className={`inline-flex items-center gap-2 p-3 rounded-lg border ${profile?.accountType === 'Worker' ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-secondary/5 border-secondary/20 text-secondary'}`}>
+                    {profile?.accountType === 'Worker' ? (
+                      <ShieldCheck className="w-5 h-5" />
+                    ) : (
+                      <UserCircle className="w-5 h-5" />
+                    )}
+                    <div>
+                      <p className="text-sm font-bold leading-none">{profile?.accountType || 'Customer'}</p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {profile?.accountType === 'Worker' 
+                          ? 'Providing expert services to the Hive.' 
+                          : 'Connecting with experts for quality help.'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

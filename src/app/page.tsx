@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Store, PlusCircle, LogIn, User as UserIcon, LogOut } from 'lucide-react';
+import { Search, Store, PlusCircle, LogIn, User as UserIcon, LogOut, ShieldCheck, UserCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -18,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from '@/components/ui/badge';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -77,46 +77,61 @@ export default function Home() {
             <h1 className="text-xl font-bold text-primary font-headline tracking-tight">E&amp;F WorkBee</h1>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {!isUserLoading && (
               user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={profile?.photoUrl} alt={profile?.name} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {profile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{profile?.name || user.displayName || 'User'}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="cursor-pointer w-full flex items-center">
-                        <UserIcon className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="cursor-pointer">Dashboard</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <>
+                  <Badge 
+                    variant={profile?.accountType === 'Worker' ? 'default' : 'secondary'} 
+                    className="hidden sm:flex items-center gap-1 h-7 px-3"
+                  >
+                    {profile?.accountType === 'Worker' ? (
+                      <ShieldCheck className="w-3 h-3" />
+                    ) : (
+                      <UserCircle className="w-3 h-3" />
+                    )}
+                    {profile?.accountType || 'Customer'}
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                        <Avatar className="h-10 w-10 border border-primary/20">
+                          <AvatarImage src={profile?.photoUrl} alt={profile?.name} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {profile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-bold leading-none">{profile?.name || user.displayName || 'User'}</p>
+                            <Badge variant="outline" className="text-[10px] py-0 px-1 font-normal ml-2">
+                              {profile?.accountType}
+                            </Badge>
+                          </div>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="cursor-pointer w-full flex items-center">
+                          <UserIcon className="mr-2 h-4 w-4" />
+                          <span>Profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               ) : (
                 <Button asChild variant="outline" size="sm" className="gap-2">
                   <Link href="/login">
@@ -139,6 +154,13 @@ export default function Home() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Reliable connections for workers, businesses, and everyday tasks. Choose an option below to get started.
           </p>
+          {profile && (
+            <div className="mt-6 flex justify-center">
+              <Badge variant="outline" className="text-sm py-1 px-4 border-primary/30 text-primary bg-primary/5">
+                Logged in as {profile.accountType}
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Navigation Grid */}
