@@ -10,6 +10,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isJobOwner(jobId) {
+      return isSignedIn() && get(/databases/$(database)/documents/jobs/$(jobId)).data.customerId == request.auth.uid;
+    }
+
     match /users/{userId} {
       allow get, list: if isSignedIn();
       allow create: if isOwner(userId);
@@ -21,6 +25,11 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update, delete: if isSignedIn() && resource.data.customerId == request.auth.uid;
+
+      match /applications/{applicationId} {
+        allow read: if isSignedIn() && (isJobOwner(jobId) || resource.data.applicantId == request.auth.uid);
+        allow create: if isSignedIn();
+      }
     }
   }
 }

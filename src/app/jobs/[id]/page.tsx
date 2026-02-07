@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc, useMemoFirebase, useUser } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { doc, collection, query, orderBy } from 'firebase/firestore';
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +22,9 @@ import {
   Edit, 
   Trash2, 
   Save, 
-  X
+  X,
+  UserCheck,
+  Send
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -38,8 +41,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 /**
- * Job Details Page with Ownership Management.
- * Allows creators to edit or delete their postings.
+ * Job Details Page with Ownership Management and Applications.
+ * Allows creators to edit or delete their postings and view applicants.
+ * Allows other users to apply for the job.
  */
 export default function JobDetailsPage() {
   const params = useParams();
@@ -49,6 +53,7 @@ export default function JobDetailsPage() {
   const { user } = useUser();
   const { toast } = useToast();
 
+  // Job Data
   const jobDocRef = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return doc(db, 'jobs', jobId);
@@ -56,9 +61,25 @@ export default function JobDetailsPage() {
 
   const { data: job, isLoading } = useDoc(jobDocRef);
 
+  // User Profile Data (for applicant name)
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !db) return null;
+    return doc(db, 'users', user.uid);
+  }, [user, db]);
+  const { data: userProfile } = useDoc(userDocRef);
+
+  // Applications Data
+  const applicationsQuery = useMemoFirebase(() => {
+    if (!db || !jobId) return null;
+    return query(collection(db, 'jobs', jobId, 'applications'), orderBy('appliedAt', 'desc'));
+  }, [db, jobId]);
+
+  const { data: applications, isLoading: isLoadingApps } = useCollection(applicationsQuery);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
 
   // Sync state with job data when loaded
   useEffect(() => {
@@ -72,7 +93,7 @@ export default function JobDetailsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <Skeleton className="h-10 w-32 mb-6" />
-        <Card className="max-w-2xl mx-auto">
+        <Card className="max-w-3xl mx-auto">
           <CardHeader>
             <Skeleton className="h-8 w-3/4 mb-2" />
             <Skeleton className="h-4 w-1/2" />
@@ -97,6 +118,7 @@ export default function JobDetailsPage() {
   }
 
   const isOwner = user && user.uid === job.customerId;
+  const hasApplied = applications?.some(app => app.applicantId === user?.uid);
 
   const handleSave = () => {
     if (!jobDocRef) return;
@@ -122,6 +144,29 @@ export default function JobDetailsPage() {
       description: "The request has been removed from the hive.",
     });
     router.push('/jobs');
+  };
+
+  const handleApply = () => {
+    if (!user || !db || !jobId || !userProfile) return;
+    
+    setIsApplying(true);
+    const appsRef = collection(db, 'jobs', jobId, 'applications');
+    
+    addDocumentNonBlocking(appsRef, {
+      applicantId: user.uid,
+      applicantName: userProfile.name || 'Anonymous User',
+      appliedAt: new Date().toISOString(),
+    })
+    .then(() => {
+      toast({
+        title: "Application Sent!",
+        description: "You've successfully applied for this job.",
+      });
+      setIsApplying(false);
+    })
+    .catch(() => {
+      setIsApplying(false);
+    });
   };
 
   return (
@@ -231,16 +276,84 @@ export default function JobDetailsPage() {
 
             {!isEditing && (
               <div className="pt-6 border-t flex flex-col sm:flex-row gap-4">
-                <Button asChild className="flex-1 gap-2 py-6 text-lg font-bold">
-                  <Link href={`/chat/user-${job.customerId}`}>
-                    <MessageSquare className="w-5 h-5" />
-                    {isOwner ? "View Conversations" : "Contact the Creator"}
-                  </Link>
-                </Button>
+                {isOwner ? (
+                  <Button asChild className="flex-1 gap-2 py-6 text-lg font-bold">
+                    <Link href={`/chat/user-${job.customerId}`}>
+                      <MessageSquare className="w-5 h-5" />
+                      View Conversations
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleApply} 
+                    disabled={isApplying || hasApplied} 
+                    className="flex-1 gap-2 py-6 text-lg font-bold bg-accent hover:bg-accent/90"
+                  >
+                    {hasApplied ? (
+                      <>
+                        <UserCheck className="w-5 h-5" />
+                        Applied
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        {isApplying ? 'Applying...' : 'Apply for this Job'}
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Applicants List for Creator */}
+        {isOwner && (
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                Applicants ({applications?.length || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingApps ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : applications && applications.length > 0 ? (
+                <div className="divide-y">
+                  {applications.map((app) => (
+                    <div key={app.id} className="py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          {app.applicantName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm">{app.applicantName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Applied on {new Date(app.appliedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                        <Link href={`/chat/${app.applicantId}`}>
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Message
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground italic">
+                  No applications yet.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground italic">
            <User className="w-3 h-3" />

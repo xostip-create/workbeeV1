@@ -89,6 +89,35 @@
         "description",
         "customerId"
       ]
+    },
+    "JobApplication": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "JobApplication",
+      "type": "object",
+      "description": "Represents an application to a job posting.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the application."
+        },
+        "applicantId": {
+          "type": "string",
+          "description": "The UID of the user who applied."
+        },
+        "applicantName": {
+          "type": "string",
+          "description": "The name of the applicant at the time of application."
+        },
+        "appliedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the application was submitted."
+        }
+      },
+      "required": [
+        "applicantId",
+        "applicantName"
+      ]
     }
   },
   "auth": {
@@ -109,6 +138,12 @@
         "$ref": "#/backend/entities/Job"
       },
       "description": "Stores job postings."
+    },
+    "/jobs/{jobId}/applications/{applicationId}": {
+      "schema": {
+        "$ref": "#/backend/entities/JobApplication"
+      },
+      "description": "Stores applications for a specific job."
     }
   }
 }
