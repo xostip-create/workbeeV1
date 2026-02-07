@@ -1,22 +1,22 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Send, Phone, CreditCard, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ArrowLeft, Send, CreditCard, Loader2, Lock, Info } from 'lucide-react';
 import Link from 'next/link';
 
 /**
  * Functional Chat Screen.
- * Now supports real-time messaging between job creator and selected worker.
- * The 'id' in params is the jobId, which also serves as the chatRoomId.
+ * Supports real-time messaging between job creator and selected worker.
+ * Messaging is restricted until payment is confirmed for the job.
  */
 export default function ChatPage() {
   const params = useParams();
@@ -34,12 +34,26 @@ export default function ChatPage() {
   }, [db, jobId]);
   const { data: chatRoom, isLoading: isLoadingRoom } = useDoc(chatRoomRef);
 
-  // Job Data (to get participant names)
+  // Job Data (to get participant names and customer info)
   const jobRef = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return doc(db, 'jobs', jobId);
   }, [db, jobId]);
   const { data: job } = useDoc(jobRef);
+
+  // Check for successful payment
+  const paymentsQuery = useMemoFirebase(() => {
+    if (!db || !jobId) return null;
+    return query(
+      collection(db, 'payments'),
+      where('jobId', '==', jobId),
+      where('status', '==', 'Paid'),
+      limit(1)
+    );
+  }, [db, jobId]);
+  const { data: payments, isLoading: isLoadingPayment } = useCollection(paymentsQuery);
+
+  const isPaid = (payments && payments.length > 0);
 
   // Messages
   const messagesQuery = useMemoFirebase(() => {
@@ -61,7 +75,7 @@ export default function ChatPage() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim() || !user || !db || !jobId) return;
+    if (!messageText.trim() || !user || !db || !jobId || !isPaid) return;
 
     const messagesRef = collection(db, 'chatRooms', jobId, 'messages');
     addDocumentNonBlocking(messagesRef, {
@@ -73,7 +87,7 @@ export default function ChatPage() {
     setMessageText('');
   };
 
-  if (isLoadingRoom || isLoadingMessages) {
+  if (isLoadingRoom || isLoadingMessages || isLoadingPayment) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -97,7 +111,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <header className="flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10">
+      <header className="flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="w-5 h-5" />
@@ -113,17 +127,40 @@ export default function ChatPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/5">
-            <Link href={`/payments/${jobId}`}>
-              <CreditCard className="w-4 h-4" />
-              Pay
-            </Link>
-          </Button>
+          {!isPaid && user.uid === job?.customerId && (
+            <Button asChild variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/5">
+              <Link href={`/payments/${jobId}`}>
+                <CreditCard className="w-4 h-4" />
+                Pay Now
+              </Link>
+            </Button>
+          )}
         </div>
       </header>
 
       <ScrollArea className="flex-1 p-4">
         <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+          {!isPaid && (
+            <Alert className="mb-4 bg-amber-50 border-amber-200">
+              <Lock className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800 text-xs font-bold">Messaging Locked</AlertTitle>
+              <AlertDescription className="text-amber-700 text-[11px]">
+                {user.uid === job?.customerId 
+                  ? "Please complete the payment for this job to start messaging the worker."
+                  : "Communication will be enabled once the customer completes the payment for this job."}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {messages && messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mb-4">
+                <Info className="w-8 h-8 opacity-20" />
+              </div>
+              <p className="text-sm">No messages yet. {isPaid ? "Start the conversation!" : "Messages will appear here after payment."}</p>
+            </div>
+          )}
+
           {messages?.map((msg) => (
             <div
               key={msg.id}
@@ -149,13 +186,22 @@ export default function ChatPage() {
 
       <footer className="p-4 border-t bg-white">
         <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto flex items-center gap-2">
-          <Input 
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Type your message..." 
-            className="flex-1 bg-muted/30 border-none focus-visible:ring-primary"
-          />
-          <Button type="submit" size="icon" className="rounded-full shrink-0" disabled={!messageText.trim()}>
+          <div className="relative flex-1">
+            <Input 
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              placeholder={isPaid ? "Type your message..." : "Payment required to chat"} 
+              className={`bg-muted/30 border-none focus-visible:ring-primary ${!isPaid ? 'cursor-not-allowed opacity-50 pr-10' : ''}`}
+              disabled={!isPaid}
+            />
+            {!isPaid && <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />}
+          </div>
+          <Button 
+            type="submit" 
+            size="icon" 
+            className="rounded-full shrink-0" 
+            disabled={!messageText.trim() || !isPaid}
+          >
             <Send className="w-4 h-4" />
           </Button>
         </form>
