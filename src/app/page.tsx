@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Store, PlusCircle, LogIn, User as UserIcon, LogOut, ShieldCheck, UserCircle } from 'lucide-react';
+import { Search, Store, PlusCircle, LogIn, User as UserIcon, LogOut, ShieldCheck, UserCircle, Briefcase } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -47,6 +47,13 @@ export default function Home() {
       icon: <Search className="w-8 h-8 text-primary" />,
       actionLabel: 'Browse Workers',
       link: '/workers'
+    },
+    {
+      title: 'Find a Job',
+      description: 'Search for opportunities to provide your skills.',
+      icon: <Briefcase className="w-8 h-8 text-primary" />,
+      actionLabel: 'Browse Jobs',
+      link: '/jobs'
     },
     {
       title: 'Find a Shop',
@@ -164,20 +171,20 @@ export default function Home() {
         </div>
 
         {/* Navigation Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {options.map((option, index) => (
             <Card 
               key={index} 
               className="group hover:shadow-xl transition-all duration-300 border-none bg-white/80 backdrop-blur-sm cursor-pointer"
             >
-              <CardContent className="p-8 flex flex-col items-center text-center">
+              <CardContent className="p-8 flex flex-col items-center text-center h-full">
                 <div className="mb-6 p-4 rounded-full bg-background group-hover:bg-primary/10 transition-colors duration-300">
                   {option.icon}
                 </div>
                 <h3 className="text-2xl font-bold mb-3 font-headline text-foreground">
                   {option.title}
                 </h3>
-                <p className="text-muted-foreground mb-8">
+                <p className="text-muted-foreground mb-8 flex-1">
                   {option.description}
                 </p>
                 <Button 
