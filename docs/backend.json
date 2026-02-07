@@ -55,6 +55,40 @@
         "name",
         "accountType"
       ]
+    },
+    "Job": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Job",
+      "type": "object",
+      "description": "Represents a job posting in the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the job."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the job."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the job."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "The UID of the user who posted the job."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the job was created."
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "customerId"
+      ]
     }
   },
   "auth": {
@@ -68,7 +102,13 @@
       "schema": {
         "$ref": "#/backend/entities/UserProfile"
       },
-      "description": "Stores user profile and account information. Each document is indexed by the user's Auth UID to ensure simple, direct linkage between authentication and data."
+      "description": "Stores user profile information."
+    },
+    "/jobs/{jobId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Job"
+      },
+      "description": "Stores job postings."
     }
   }
 }
