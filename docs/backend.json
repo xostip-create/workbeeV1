@@ -88,10 +88,11 @@
         },
         "status": {
           "type": "string",
-          "description": "The current status of the job (e.g., 'Open', 'Assigned').",
+          "description": "The current status of the job.",
           "enum": [
             "Open",
-            "Assigned"
+            "In Progress",
+            "Completed"
           ]
         },
         "createdAt": {

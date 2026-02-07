@@ -26,7 +26,8 @@ import {
   UserCheck,
   Send,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  PlayCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 /**
- * Job Details Page with Ownership Management, Applications, and Worker Selection.
+ * Job Details Page with Status Management (Open, In Progress, Completed).
  */
 export default function JobDetailsPage() {
   const params = useParams();
@@ -120,7 +121,9 @@ export default function JobDetailsPage() {
   const isOwner = user && user.uid === job.customerId;
   const isSelectedWorker = user && user.uid === job.selectedApplicantId;
   const hasApplied = applications?.some(app => app.applicantId === user?.uid);
-  const isAssigned = job.status === 'Assigned';
+  const isInProgress = job.status === 'In Progress';
+  const isCompleted = job.status === 'Completed';
+  const isOpen = !job.status || job.status === 'Open';
 
   const handleSave = () => {
     if (!jobDocRef) return;
@@ -174,11 +177,11 @@ export default function JobDetailsPage() {
   const handleSelectWorker = (applicantId: string, applicantName: string) => {
     if (!jobDocRef || !db) return;
 
-    // 1. Update the Job
+    // 1. Update the Job - Status automatically becomes In Progress
     updateDocumentNonBlocking(jobDocRef, {
       selectedApplicantId: applicantId,
       selectedApplicantName: applicantName,
-      status: 'Assigned',
+      status: 'In Progress',
     });
 
     // 2. Create the Chat Room
@@ -190,7 +193,20 @@ export default function JobDetailsPage() {
 
     toast({
       title: "Worker Selected!",
-      description: `${applicantName} has been assigned to this job. Chat enabled.`,
+      description: `${applicantName} has been assigned. Status updated to In Progress.`,
+    });
+  };
+
+  const handleMarkAsCompleted = () => {
+    if (!jobDocRef) return;
+    
+    updateDocumentNonBlocking(jobDocRef, {
+      status: 'Completed',
+    });
+    
+    toast({
+      title: "Job Completed",
+      description: "Great work! This job has been marked as finished.",
     });
   };
 
@@ -204,18 +220,23 @@ export default function JobDetailsPage() {
       </Button>
       
       <div className="max-w-3xl mx-auto space-y-6">
-        <Card className="shadow-lg border-t-4 border-t-primary overflow-hidden">
+        <Card className={`shadow-lg border-t-4 overflow-hidden ${isCompleted ? 'border-t-blue-500' : isInProgress ? 'border-t-green-500' : 'border-t-primary'}`}>
           <CardHeader className="bg-muted/30 border-b p-8">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="space-y-2 flex-1">
                 <div className="flex items-center gap-2">
-                  <Badge variant={isAssigned ? "secondary" : "outline"} className={isAssigned ? "bg-green-100 text-green-700 border-green-200" : "bg-primary/5 text-primary border-primary/20"}>
-                    {isAssigned ? (
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                    ) : (
-                      <Briefcase className="w-3 h-3 mr-1" />
-                    )}
-                    {isAssigned ? `Assigned to ${job.selectedApplicantName}` : 'Open Request'}
+                  <Badge 
+                    variant="secondary" 
+                    className={
+                      isCompleted ? "bg-blue-100 text-blue-700 border-blue-200" :
+                      isInProgress ? "bg-green-100 text-green-700 border-green-200" :
+                      "bg-primary/5 text-primary border-primary/20"
+                    }
+                  >
+                    {isCompleted ? <CheckCircle2 className="w-3 h-3 mr-1" /> :
+                     isInProgress ? <PlayCircle className="w-3 h-3 mr-1" /> :
+                     <Briefcase className="w-3 h-3 mr-1" />}
+                    {job.status || 'Open'}
                   </Badge>
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3" />
@@ -239,7 +260,7 @@ export default function JobDetailsPage() {
                 )}
               </div>
 
-              {isOwner && !isEditing && (
+              {isOwner && !isEditing && isOpen && (
                 <div className="flex gap-2 shrink-0">
                   <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
                     <Edit className="w-4 h-4" />
@@ -303,7 +324,7 @@ export default function JobDetailsPage() {
               )}
             </section>
 
-            {!isEditing && !isAssigned && (
+            {!isEditing && isOpen && (
               <div className="pt-6 border-t flex flex-col sm:flex-row gap-4">
                 {!isOwner && (
                   <Button 
@@ -327,26 +348,37 @@ export default function JobDetailsPage() {
               </div>
             )}
 
-            {isAssigned && (isOwner || isSelectedWorker) && (
+            {(isInProgress || isCompleted) && (isOwner || isSelectedWorker) && (
               <div className="pt-6 border-t">
-                <div className="bg-green-50 border border-green-100 rounded-lg p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className={`border rounded-lg p-6 flex flex-col sm:flex-row items-center justify-between gap-4 ${isCompleted ? 'bg-blue-50 border-blue-100' : 'bg-green-50 border-green-100'}`}>
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                    {isCompleted ? <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5" /> : <PlayCircle className="w-5 h-5 text-green-600 mt-0.5" />}
                     <div>
-                      <h4 className="font-bold text-green-800">Worker Assigned</h4>
-                      <p className="text-sm text-green-700">
-                        {isOwner 
-                          ? `You've hired ${job.selectedApplicantName}. Coordinate the details via chat.` 
-                          : `You've been selected for this job! Coordinate with the owner via chat.`}
+                      <h4 className={`font-bold ${isCompleted ? 'text-blue-800' : 'text-green-800'}`}>
+                        {isCompleted ? 'Job Completed' : 'Job In Progress'}
+                      </h4>
+                      <p className={`text-sm ${isCompleted ? 'text-blue-700' : 'text-green-700'}`}>
+                        {isCompleted 
+                          ? `This job was successfully completed by ${job.selectedApplicantName}.` 
+                          : isOwner 
+                            ? `You've hired ${job.selectedApplicantName}. Mark as completed when the work is done.` 
+                            : `You're working on this job! Coordinate with the owner via chat.`}
                       </p>
                     </div>
                   </div>
-                  <Button asChild className="shrink-0 gap-2 bg-green-600 hover:bg-green-700">
-                    <Link href={`/chat/${jobId}`}>
-                      <MessageSquare className="w-4 h-4" />
-                      Open Chat
-                    </Link>
-                  </Button>
+                  <div className="flex gap-2 shrink-0">
+                    <Button asChild variant="outline" className={isCompleted ? "border-blue-200 text-blue-700 hover:bg-blue-100" : "border-green-200 text-green-700 hover:bg-green-100"}>
+                      <Link href={`/chat/${jobId}`}>
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Chat
+                      </Link>
+                    </Button>
+                    {isOwner && isInProgress && (
+                      <Button onClick={handleMarkAsCompleted} className="bg-blue-600 hover:bg-blue-700">
+                        Mark Completed
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -354,7 +386,7 @@ export default function JobDetailsPage() {
         </Card>
 
         {/* Applicants List for Creator */}
-        {isOwner && (
+        {isOwner && isOpen && (
           <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="text-xl flex items-center justify-between">
@@ -362,11 +394,6 @@ export default function JobDetailsPage() {
                   <User className="w-5 h-5 text-primary" />
                   Applicants ({applications?.length || 0})
                 </div>
-                {isAssigned && (
-                   <Badge variant="secondary" className="bg-green-100 text-green-700">
-                     Hired: {job.selectedApplicantName}
-                   </Badge>
-                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -380,41 +407,24 @@ export default function JobDetailsPage() {
                   {applications.map((app) => (
                     <div key={app.id} className="py-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${job.selectedApplicantId === app.applicantId ? 'bg-green-500 text-white' : 'bg-primary/10 text-primary'}`}>
-                          {job.selectedApplicantId === app.applicantId ? <CheckCircle2 className="w-6 h-6" /> : app.applicantName.charAt(0)}
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold bg-primary/10 text-primary">
+                          {app.applicantName.charAt(0)}
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-sm">{app.applicantName}</p>
-                            {job.selectedApplicantId === app.applicantId && (
-                              <Badge className="bg-green-500 text-white text-[10px] py-0 px-1">Selected</Badge>
-                            )}
-                          </div>
+                          <p className="font-bold text-sm">{app.applicantName}</p>
                           <p className="text-xs text-muted-foreground">
                             Applied on {new Date(app.appliedAt).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        {!isAssigned && (
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            className="bg-green-500 text-white hover:bg-green-600"
-                            onClick={() => handleSelectWorker(app.applicantId, app.applicantName)}
-                          >
-                            Select Worker
-                          </Button>
-                        )}
-                        {isAssigned && job.selectedApplicantId === app.applicantId && (
-                          <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary/80">
-                            <Link href={`/chat/${jobId}`}>
-                              <MessageSquare className="w-4 h-4 mr-2" />
-                              Open Chat
-                            </Link>
-                          </Button>
-                        )}
-                      </div>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="bg-green-500 text-white hover:bg-green-600"
+                        onClick={() => handleSelectWorker(app.applicantId, app.applicantName)}
+                      >
+                        Select Worker
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -425,6 +435,27 @@ export default function JobDetailsPage() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {(isInProgress || isCompleted) && isOwner && (
+           <Card className="shadow-md border-none bg-muted/20">
+             <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center">
+                         <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <div>
+                         <p className="text-xs font-bold uppercase text-muted-foreground">Assigned Worker</p>
+                         <p className="font-bold">{job.selectedApplicantName}</p>
+                      </div>
+                   </div>
+                   <Badge variant="outline" className="border-green-200 text-green-700 bg-white">
+                     Hired
+                   </Badge>
+                </div>
+             </CardContent>
+           </Card>
         )}
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground italic">
