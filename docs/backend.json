@@ -20,6 +20,10 @@
           "type": "string",
           "description": "The full name of the user."
         },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The contact phone number of the user."
+        },
         "accountType": {
           "type": "string",
           "description": "The type of user account: 'Worker' or 'Customer'.",

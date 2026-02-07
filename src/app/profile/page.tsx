@@ -31,7 +31,8 @@ import {
   Clock,
   CircleCheck,
   CircleDashed,
-  Star
+  Star,
+  Phone
 } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -54,6 +55,7 @@ export default function ProfilePage() {
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
+  const [editedPhoneNumber, setEditedPhoneNumber] = useState('');
   const [editedPhotoUrl, setEditedPhotoUrl] = useState('');
   const [editedSkills, setEditedSkills] = useState<string[]>([]);
   const [editedIsAvailable, setEditedIsAvailable] = useState(true);
@@ -81,6 +83,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       setEditedName(profile.name || '');
+      setEditedPhoneNumber(profile.phoneNumber || '');
       setEditedPhotoUrl(profile.photoUrl || '');
       setEditedSkills(profile.skills || []);
       setEditedIsAvailable(profile.isAvailable !== false);
@@ -115,6 +118,7 @@ export default function ProfilePage() {
     if (!userDocRef || !editedName.trim()) return;
     updateDocumentNonBlocking(userDocRef, {
       name: editedName.trim(),
+      phoneNumber: editedPhoneNumber.trim(),
       photoUrl: editedPhotoUrl.trim(),
       skills: editedSkills,
       isAvailable: editedIsAvailable,
@@ -125,6 +129,7 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setEditedName(profile?.name || '');
+    setEditedPhoneNumber(profile?.phoneNumber || '');
     setEditedPhotoUrl(profile?.photoUrl || '');
     setEditedSkills(profile?.skills || []);
     setEditedIsAvailable(profile?.isAvailable !== false);
@@ -199,6 +204,26 @@ export default function ProfilePage() {
                 ) : (
                   <p className="text-lg font-medium">{profile?.name || 'Not provided'}</p>
                 )}
+              </div>
+
+              {/* Phone Section */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                  <Phone className="w-4 h-4" />Phone Number
+                </div>
+                {isEditing ? (
+                  <Input 
+                    value={editedPhoneNumber} 
+                    onChange={(e) => setEditedPhoneNumber(e.target.value)} 
+                    placeholder="e.g. 08012345678"
+                    className="text-lg h-12" 
+                  />
+                ) : (
+                  <p className="text-lg font-medium">{profile?.phoneNumber || 'Not provided'}</p>
+                )}
+                <p className="text-[10px] text-muted-foreground italic">
+                  Note: Your phone number is only shared with customers who have paid for a job you are assigned to.
+                </p>
               </div>
 
               {/* Availability Toggle */}
