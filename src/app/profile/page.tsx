@@ -8,6 +8,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   User, 
   Mail, 
@@ -25,13 +27,16 @@ import {
   Droplets,
   Zap,
   Brush,
-  Car
+  Car,
+  Clock,
+  CircleCheck,
+  CircleDashed
 } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const PREDEFINED_SKILLS = [
   { name: 'Mechanic', icon: <Wrench className="w-3 h-3" /> },
@@ -50,6 +55,7 @@ export default function ProfilePage() {
   const [editedName, setEditedName] = useState('');
   const [editedPhotoUrl, setEditedPhotoUrl] = useState('');
   const [editedSkills, setEditedSkills] = useState<string[]>([]);
+  const [editedIsAvailable, setEditedIsAvailable] = useState(true);
   const [customSkill, setCustomSkill] = useState('');
 
   const userDocRef = useMemoFirebase(() => {
@@ -64,6 +70,7 @@ export default function ProfilePage() {
       setEditedName(profile.name || '');
       setEditedPhotoUrl(profile.photoUrl || '');
       setEditedSkills(profile.skills || []);
+      setEditedIsAvailable(profile.isAvailable !== false); // Default to true if undefined
     }
   }, [profile]);
 
@@ -102,6 +109,7 @@ export default function ProfilePage() {
       name: editedName.trim(),
       photoUrl: editedPhotoUrl.trim(),
       skills: editedSkills,
+      isAvailable: editedIsAvailable,
     });
 
     toast({
@@ -116,6 +124,7 @@ export default function ProfilePage() {
     setEditedName(profile?.name || '');
     setEditedPhotoUrl(profile?.photoUrl || '');
     setEditedSkills(profile?.skills || []);
+    setEditedIsAvailable(profile?.isAvailable !== false);
     setIsEditing(false);
   };
 
@@ -145,8 +154,8 @@ export default function ProfilePage() {
           </Link>
         </Button>
 
-        <Card className="shadow-lg border-t-4 border-t-primary">
-          <CardHeader className="border-b bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Card className="shadow-lg border-t-4 border-t-primary overflow-hidden">
+          <CardHeader className="border-b bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-4 p-6">
             <div className="flex items-center gap-4">
               <Avatar className="w-20 h-20 border-2 border-background shadow-md">
                 <AvatarImage src={profile?.photoUrl} alt={profile?.name} />
@@ -156,8 +165,8 @@ export default function ProfilePage() {
               </Avatar>
               <div>
                 <CardTitle className="text-3xl font-bold">{profile?.name || 'User Profile'}</CardTitle>
-                <div className="mt-1">
-                  <Badge variant={profile?.accountType === 'Worker' ? 'default' : 'secondary'} className="flex items-center gap-1 w-fit">
+                <div className="mt-1 flex flex-wrap gap-2">
+                  <Badge variant={profile?.accountType === 'Worker' ? 'default' : 'secondary'} className="flex items-center gap-1">
                     {profile?.accountType === 'Worker' ? (
                       <ShieldCheck className="w-3 h-3" />
                     ) : (
@@ -165,6 +174,16 @@ export default function ProfilePage() {
                     )}
                     {profile?.accountType || 'Customer'}
                   </Badge>
+                  {profile?.accountType === 'Worker' && (
+                    <Badge variant={profile?.isAvailable !== false ? "success" as any : "secondary"} className={`gap-1 ${profile?.isAvailable !== false ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}>
+                      {profile?.isAvailable !== false ? (
+                        <CircleCheck className="w-3 h-3" />
+                      ) : (
+                        <CircleDashed className="w-3 h-3" />
+                      )}
+                      {profile?.isAvailable !== false ? 'Available' : 'Not Available'}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
@@ -175,8 +194,9 @@ export default function ProfilePage() {
               </Button>
             )}
           </CardHeader>
-          <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 gap-6">
+          <CardContent className="p-6 space-y-8">
+            <div className="grid grid-cols-1 gap-8">
+              {/* Name Section */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
                   <User className="w-4 h-4" />
@@ -194,6 +214,38 @@ export default function ProfilePage() {
                 )}
               </div>
 
+              {/* Availability Toggle for Workers */}
+              {(isEditing || profile?.accountType === 'Worker') && profile?.accountType === 'Worker' && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                    <Clock className="w-4 h-4" />
+                    Availability Status
+                  </div>
+                  {isEditing ? (
+                    <div className="flex items-center space-x-2 bg-muted/20 p-3 rounded-lg border">
+                      <Switch 
+                        id="availability-toggle" 
+                        checked={editedIsAvailable}
+                        onCheckedChange={setEditedIsAvailable}
+                      />
+                      <Label htmlFor="availability-toggle" className="cursor-pointer font-medium">
+                        {editedIsAvailable ? 'I am available for work' : 'I am currently busy'}
+                      </Label>
+                    </div>
+                  ) : (
+                    <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border text-sm font-medium ${profile?.isAvailable !== false ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+                       {profile?.isAvailable !== false ? (
+                        <CircleCheck className="w-4 h-4" />
+                      ) : (
+                        <CircleDashed className="w-4 h-4" />
+                      )}
+                      {profile?.isAvailable !== false ? 'Available for new jobs' : 'Currently not taking new jobs'}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Photo Section */}
               {isEditing && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
@@ -210,18 +262,21 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              <div className="space-y-2">
+              {/* Skills Section */}
+              <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
                   <Briefcase className="w-4 h-4" />
                   Skills & Services
                 </div>
                 
                 {isEditing ? (
-                  <div className="space-y-4">
+                  <div className="space-y-4 border rounded-lg p-4 bg-muted/10">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Predefined Categories</p>
                     <div className="flex flex-wrap gap-2">
                       {PREDEFINED_SKILLS.map((skill) => (
                         <Button
                           key={skill.name}
+                          type="button"
                           variant={editedSkills.includes(skill.name) ? "default" : "outline"}
                           size="sm"
                           className="gap-2 rounded-full"
@@ -233,36 +288,40 @@ export default function ProfilePage() {
                       ))}
                     </div>
                     
-                    <form onSubmit={addCustomSkill} className="flex gap-2">
-                      <Input
-                        value={customSkill}
-                        onChange={(e) => setCustomSkill(e.target.value)}
-                        placeholder="Add custom skill..."
-                        className="h-9"
-                      />
-                      <Button type="submit" size="sm" variant="secondary" className="gap-2">
-                        <Plus className="w-4 h-4" />
-                        Add
-                      </Button>
-                    </form>
+                    <div className="pt-4 border-t">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Custom Skills</p>
+                      <div className="flex gap-2">
+                        <Input
+                          value={customSkill}
+                          onChange={(e) => setCustomSkill(e.target.value)}
+                          placeholder="Add custom skill (e.g. Tiler, Tutor)..."
+                          className="h-9"
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomSkill(e as any))}
+                        />
+                        <Button type="button" size="sm" variant="secondary" className="gap-2" onClick={(e) => addCustomSkill(e as any)}>
+                          <Plus className="w-4 h-4" />
+                          Add
+                        </Button>
+                      </div>
 
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {editedSkills.filter(s => !PREDEFINED_SKILLS.some(ps => ps.name === s)).map(skill => (
-                        <Badge key={skill} variant="secondary" className="gap-1 pr-1">
-                          {skill}
-                          <X 
-                            className="w-3 h-3 cursor-pointer hover:text-destructive" 
-                            onClick={() => toggleSkill(skill)}
-                          />
-                        </Badge>
-                      ))}
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {editedSkills.filter(s => !PREDEFINED_SKILLS.some(ps => ps.name === s)).map(skill => (
+                          <Badge key={skill} variant="secondary" className="gap-1 pr-1 bg-accent/10 text-accent border-accent/20">
+                            {skill}
+                            <X 
+                              className="w-3 h-3 cursor-pointer hover:text-destructive transition-colors" 
+                              onClick={() => toggleSkill(skill)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {profile?.skills && profile.skills.length > 0 ? (
                       profile.skills.map((skill: string) => (
-                        <Badge key={skill} variant="outline" className="px-3 py-1">
+                        <Badge key={skill} variant="outline" className="px-4 py-1.5 text-sm border-primary/20 text-primary bg-primary/5">
                           {skill}
                         </Badge>
                       ))
@@ -273,6 +332,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
+              {/* Email Section (Read Only) */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
                   <Mail className="w-4 h-4" />
@@ -281,23 +341,24 @@ export default function ProfilePage() {
                 <p className="text-lg font-medium text-muted-foreground">{user.email}</p>
               </div>
 
+              {/* Account Type Summary */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
                   <Shield className="w-4 h-4" />
                   Account Type
                 </div>
                 <div className="pt-2">
-                  <div className={`inline-flex items-center gap-2 p-3 rounded-lg border ${profile?.accountType === 'Worker' ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-secondary/5 border-secondary/20 text-secondary'}`}>
+                  <div className={`inline-flex items-center gap-2 p-4 rounded-lg border ${profile?.accountType === 'Worker' ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-secondary/5 border-secondary/20 text-secondary'}`}>
                     {profile?.accountType === 'Worker' ? (
-                      <ShieldCheck className="w-5 h-5" />
+                      <ShieldCheck className="w-6 h-6" />
                     ) : (
-                      <UserCircle className="w-5 h-5" />
+                      <UserCircle className="w-6 h-6" />
                     )}
                     <div>
                       <p className="text-sm font-bold leading-none">{profile?.accountType || 'Customer'}</p>
                       <p className="text-xs opacity-70 mt-1">
                         {profile?.accountType === 'Worker' 
-                          ? 'Providing expert services to the Hive.' 
+                          ? 'Providing expert services to the community.' 
                           : 'Connecting with experts for quality help.'}
                       </p>
                     </div>
@@ -307,7 +368,7 @@ export default function ProfilePage() {
             </div>
           </CardContent>
           {isEditing && (
-            <CardFooter className="border-t bg-muted/10 p-4 flex justify-end gap-3">
+            <CardFooter className="border-t bg-muted/10 p-6 flex justify-end gap-3">
               <Button variant="ghost" onClick={handleCancel} className="gap-2">
                 <X className="w-4 h-4" />
                 Cancel

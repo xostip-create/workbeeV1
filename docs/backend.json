@@ -32,6 +32,10 @@
           "type": "string",
           "description": "URL to the user's profile photo."
         },
+        "isAvailable": {
+          "type": "boolean",
+          "description": "Whether the worker is currently available for jobs."
+        },
         "skills": {
           "type": "array",
           "items": {

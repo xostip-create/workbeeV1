@@ -44,6 +44,8 @@ export default function SignupPage() {
         email: email,
         accountType: accountType,
         photoUrl: '', // Initialize empty photo URL
+        isAvailable: true, // Default to available for workers
+        skills: [], // Initialize empty skills array
         createdAt: new Date().toISOString(),
       });
 
