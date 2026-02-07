@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Store, PlusCircle, LogIn, User as UserIcon, LogOut, ShieldCheck, UserCircle, Briefcase } from 'lucide-react';
+import { Search, Store, PlusCircle, LogIn, User as UserIcon, LogOut, ShieldCheck, UserCircle, Briefcase, Settings2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -204,9 +204,15 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 bg-white/50 border-t">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             &copy; {currentYear || '...'} E&amp;F WorkBee. All rights reserved.
           </p>
+          <div className="flex justify-center gap-4 text-xs">
+            <Link href="/admin" className="text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors">
+              <Settings2 className="w-3 h-3" />
+              Admin Dashboard
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
