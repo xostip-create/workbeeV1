@@ -1,22 +1,25 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-export default function PaymentCallbackPage() {
+/**
+ * Inner component that uses search params.
+ * Must be wrapped in Suspense for Next.js build.
+ */
+function CallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useUser();
   const db = useFirestore();
   
-  const trxref = searchParams.get('trxref');
   const reference = searchParams.get('reference');
   const jobId = searchParams.get('jobId');
   
@@ -90,5 +93,17 @@ export default function PaymentCallbackPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <CallbackContent />
+    </Suspense>
   );
 }
