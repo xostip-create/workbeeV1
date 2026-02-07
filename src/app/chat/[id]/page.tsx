@@ -10,13 +10,15 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, Send, CreditCard, Loader2, Lock, Info } from 'lucide-react';
+import { ArrowLeft, Send, CreditCard, Loader2, Lock, Info, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Functional Chat Screen.
  * Supports real-time messaging between job creator and selected worker.
  * Messaging is restricted until payment is confirmed for the job.
+ * Enforces safety by blocking phone numbers before payment.
  */
 export default function ChatPage() {
   const params = useParams();
@@ -24,6 +26,7 @@ export default function ChatPage() {
   const jobId = params.id as string;
   const { user } = useUser();
   const db = useFirestore();
+  const { toast } = useToast();
   const [messageText, setMessageText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -75,12 +78,32 @@ export default function ChatPage() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim() || !user || !db || !jobId || !isPaid) return;
+    const text = messageText.trim();
+    if (!text || !user || !db || !jobId) return;
+
+    if (!isPaid) {
+      // Phone number detection regex (simple sequence of 7-15 digits)
+      const phoneRegex = /\d{7,15}/;
+      if (phoneRegex.test(text.replace(/\s/g, ''))) {
+        toast({
+          variant: 'destructive',
+          title: '⚠️ Safety Notice',
+          description: 'Sharing contact details is not allowed before payment. Please use in-app chat and price proposal.',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Payment Required',
+        description: 'You must complete the payment for this job before you can send messages.',
+      });
+      return;
+    }
 
     const messagesRef = collection(db, 'chatRooms', jobId, 'messages');
     addDocumentNonBlocking(messagesRef, {
       senderId: user.uid,
-      text: messageText.trim(),
+      text: text,
       createdAt: new Date().toISOString(),
     });
 
@@ -191,8 +214,7 @@ export default function ChatPage() {
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               placeholder={isPaid ? "Type your message..." : "Payment required to chat"} 
-              className={`bg-muted/30 border-none focus-visible:ring-primary ${!isPaid ? 'cursor-not-allowed opacity-50 pr-10' : ''}`}
-              disabled={!isPaid}
+              className="bg-muted/30 border-none focus-visible:ring-primary"
             />
             {!isPaid && <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />}
           </div>
@@ -200,7 +222,7 @@ export default function ChatPage() {
             type="submit" 
             size="icon" 
             className="rounded-full shrink-0" 
-            disabled={!messageText.trim() || !isPaid}
+            disabled={!messageText.trim()}
           >
             <Send className="w-4 h-4" />
           </Button>
