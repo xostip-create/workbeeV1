@@ -1,24 +1,48 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection, query, orderBy, limit, where } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, Send, CreditCard, Loader2, Lock, Info, ShieldAlert } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  ArrowLeft, 
+  Send, 
+  CreditCard, 
+  Loader2, 
+  Lock, 
+  Info, 
+  ShieldAlert, 
+  Banknote, 
+  Check, 
+  X, 
+  MessageCircle,
+  Clock
+} from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 /**
- * Functional Chat Screen.
- * Supports real-time messaging between job creator and selected worker.
- * Messaging is restricted until payment is confirmed for the job.
- * Enforces safety by blocking phone numbers before payment.
+ * Functional Chat Screen with Price Proposals.
  */
 export default function ChatPage() {
   const params = useParams();
@@ -30,6 +54,11 @@ export default function ChatPage() {
   const [messageText, setMessageText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Proposal State
+  const [proposalAmount, setProposalAmount] = useState('');
+  const [proposalDesc, setProposalDesc] = useState('');
+  const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
+
   // Chat Room Metadata
   const chatRoomRef = useMemoFirebase(() => {
     if (!db || !jobId) return null;
@@ -37,7 +66,7 @@ export default function ChatPage() {
   }, [db, jobId]);
   const { data: chatRoom, isLoading: isLoadingRoom } = useDoc(chatRoomRef);
 
-  // Job Data (to get participant names and customer info)
+  // Job Data
   const jobRef = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return doc(db, 'jobs', jobId);
@@ -69,12 +98,24 @@ export default function ChatPage() {
   }, [db, jobId]);
   const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
 
+  // Price Proposals
+  const proposalsQuery = useMemoFirebase(() => {
+    if (!db || !jobId) return null;
+    return query(
+      collection(db, 'jobs', jobId, 'proposals'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [db, jobId]);
+  const { data: proposals } = useCollection(proposalsQuery);
+
+  const activeProposal = proposals?.find(p => p.status === 'Pending' || p.status === 'Countered');
+
   // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, proposals]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +123,6 @@ export default function ChatPage() {
     if (!text || !user || !db || !jobId) return;
 
     if (!isPaid) {
-      // Phone number detection regex (simple sequence of 7-15 digits)
       const phoneRegex = /\d{7,15}/;
       if (phoneRegex.test(text.replace(/\s/g, ''))) {
         toast({
@@ -108,6 +148,58 @@ export default function ChatPage() {
     });
 
     setMessageText('');
+  };
+
+  const handleProposePrice = () => {
+    if (!user || !db || !jobId || !job || !proposalAmount) return;
+    
+    const recipientId = user.uid === job.customerId ? job.selectedApplicantId : job.customerId;
+    const proposalsRef = collection(db, 'jobs', jobId, 'proposals');
+    
+    addDocumentNonBlocking(proposalsRef, {
+      jobId,
+      proposerId: user.uid,
+      recipientId,
+      amount: parseFloat(proposalAmount),
+      description: proposalDesc,
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+    });
+
+    setProposalAmount('');
+    setProposalDesc('');
+    setIsProposalDialogOpen(false);
+    toast({ title: "Proposal Sent", description: "Your price proposal has been sent to the other party." });
+  };
+
+  const handleRespondToProposal = (proposalId: string, status: 'Accepted' | 'Rejected' | 'Countered', counterAmount?: number) => {
+    if (!db || !jobId) return;
+    const proposalRef = doc(db, 'jobs', jobId, 'proposals', proposalId);
+    
+    const updateData: any = {
+      status,
+      respondedAt: new Date().toISOString(),
+    };
+
+    updateDocumentNonBlocking(proposalRef, updateData);
+
+    if (status === 'Countered' && counterAmount) {
+       const recipientId = user?.uid === job?.customerId ? job?.selectedApplicantId : job?.customerId;
+       const proposalsRef = collection(db, 'jobs', jobId, 'proposals');
+       addDocumentNonBlocking(proposalsRef, {
+         jobId,
+         proposerId: user?.uid,
+         recipientId,
+         amount: counterAmount,
+         status: 'Pending', // New proposal is pending
+         createdAt: new Date().toISOString(),
+       });
+    }
+
+    toast({ 
+      title: `Proposal ${status}`, 
+      description: status === 'Countered' ? "New counter-offer sent." : `You have ${status.toLowerCase()} the proposal.` 
+    });
   };
 
   if (isLoadingRoom || isLoadingMessages || isLoadingPayment) {
@@ -150,11 +242,53 @@ export default function ChatPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {!isPaid && (
+            <Dialog open={isProposalDialogOpen} onOpenChange={setIsProposalDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 border-primary text-primary">
+                  <Banknote className="w-4 h-4" />
+                  Propose Price
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Propose a Price</DialogTitle>
+                  <DialogDescription>
+                    Suggest a budget for this job. You can negotiate until both parties agree.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount (₦)</Label>
+                    <Input 
+                      id="amount" 
+                      type="number" 
+                      placeholder="e.g. 15000" 
+                      value={proposalAmount}
+                      onChange={(e) => setProposalAmount(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="desc">Notes (Optional)</Label>
+                    <Textarea 
+                      id="desc" 
+                      placeholder="Explain your pricing..." 
+                      value={proposalDesc}
+                      onChange={(e) => setProposalDesc(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleProposePrice} disabled={!proposalAmount}>Send Proposal</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
           {!isPaid && user.uid === job?.customerId && (
             <Button asChild variant="outline" size="sm" className="gap-2 border-primary text-primary hover:bg-primary/5">
               <Link href={`/payments/${jobId}`}>
                 <CreditCard className="w-4 h-4" />
-                Pay Now
+                Pay
               </Link>
             </Button>
           )}
@@ -162,26 +296,45 @@ export default function ChatPage() {
       </header>
 
       <ScrollArea className="flex-1 p-4">
-        <div className="flex flex-col gap-4 max-w-2xl mx-auto">
+        <div className="flex flex-col gap-4 max-w-2xl mx-auto pb-8">
+          {/* Active Proposal Card */}
+          {activeProposal && (
+            <Card className="border-primary/20 bg-primary/5 mb-4 overflow-hidden">
+               <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b bg-primary/10">
+                 <div className="flex items-center gap-2">
+                    <Banknote className="w-4 h-4 text-primary" />
+                    <CardTitle className="text-sm font-bold">Price Proposal</CardTitle>
+                 </div>
+                 <Badge variant="secondary" className="text-[10px]">{activeProposal.status}</Badge>
+               </CardHeader>
+               <CardContent className="p-4 space-y-2">
+                  <div className="text-2xl font-bold text-primary">₦{activeProposal.amount.toLocaleString()}</div>
+                  {activeProposal.description && <p className="text-xs text-muted-foreground">{activeProposal.description}</p>}
+                  <p className="text-[10px] text-muted-foreground">Proposed by {activeProposal.proposerId === user.uid ? 'you' : otherParticipantName}</p>
+               </CardContent>
+               {activeProposal.recipientId === user.uid && (
+                 <CardFooter className="bg-white p-2 flex gap-2 border-t">
+                    <Button variant="outline" size="sm" className="flex-1 text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleRespondToProposal(activeProposal.id, 'Accepted')}>
+                      <Check className="w-4 h-4 mr-1" /> Accept
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleRespondToProposal(activeProposal.id, 'Rejected')}>
+                      <X className="w-4 h-4 mr-1" /> Reject
+                    </Button>
+                 </CardFooter>
+               )}
+            </Card>
+          )}
+
           {!isPaid && (
             <Alert className="mb-4 bg-amber-50 border-amber-200">
               <Lock className="h-4 w-4 text-amber-600" />
-              <AlertTitle className="text-amber-800 text-xs font-bold">Messaging Locked</AlertTitle>
+              <AlertTitle className="text-amber-800 text-xs font-bold">Messaging Restricted</AlertTitle>
               <AlertDescription className="text-amber-700 text-[11px]">
                 {user.uid === job?.customerId 
-                  ? "Please complete the payment for this job to start messaging the worker."
+                  ? "Agree on a price and complete payment to unlock full messaging."
                   : "Communication will be enabled once the customer completes the payment for this job."}
               </AlertDescription>
             </Alert>
-          )}
-
-          {messages && messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-              <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mb-4">
-                <Info className="w-8 h-8 opacity-20" />
-              </div>
-              <p className="text-sm">No messages yet. {isPaid ? "Start the conversation!" : "Messages will appear here after payment."}</p>
-            </div>
           )}
 
           {messages?.map((msg) => (

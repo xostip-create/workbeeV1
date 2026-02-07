@@ -111,6 +111,27 @@
         "customerId"
       ]
     },
+    "PriceProposal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PriceProposal",
+      "type": "object",
+      "description": "A price proposal or counter-offer for a job.",
+      "properties": {
+        "id": { "type": "string" },
+        "jobId": { "type": "string" },
+        "proposerId": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Accepted", "Rejected", "Countered"]
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "respondedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["jobId", "proposerId", "recipientId", "amount", "status", "createdAt"]
+    },
     "Review": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Review",
@@ -299,6 +320,12 @@
         "$ref": "#/backend/entities/JobApplication"
       },
       "description": "Stores applications for a specific job."
+    },
+    "/jobs/{jobId}/proposals/{proposalId}": {
+      "schema": {
+        "$ref": "#/backend/entities/PriceProposal"
+      },
+      "description": "Stores price proposals for a specific job."
     },
     "/chatRooms/{jobId}": {
       "schema": {
