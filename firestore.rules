@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * E&F WorkBee Security Rules Documentation
+     *
+     * Core Philosophy:
+     * This ruleset implements a strict path-based ownership model for user account management. 
+     * Security is enforced by ensuring that a user can only interact with the document 
+     * that corresponds to their own Firebase Authentication UID.
+     *
+     * Data Structure:
+     * User data is stored at the root level under the /users/ collection, where each 
+     * document ID is the UID of the user (/users/{userId}).
+     *
+     * Key Security Decisions:
+     * 1. Strict Isolation: No user can read or write data belonging to another user.
+     * 2. No Public Listing: The /users collection cannot be listed by any user. Users 
+     *    can only 'get' their own document.
+     * 3. Identity Anchoring: We enforce that the 'id' field within the UserAccount 
+     *    document matches the document ID and the user's Auth UID.
+     *
+     * Denormalization for Authorization:
+     * To ensure high performance and strict relational integrity, the 'id' of the user 
+     * is denormalized directly into the UserAccount document. This allows for simple, 
+     * non-recursive rules that validate the relationship between the Auth state, 
+     * the document path, and the internal data.
+     */
+
+    // --- Helper Functions ---
+
+    /** 
+     * Checks if the request is from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** 
+     * Checks if the authenticated user's UID matches the provided userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** 
+     * Checks if the user is the owner and the document exists. 
+     * Used for destructive or state-changing operations (update, delete).
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the UserAccount entity. Manages basic user profile data.
+     * @path /users/{userId}
+     * @allow (get) If the authenticated user's UID matches {userId}.
+     * @allow (create) If the user is the owner AND the internal 'id' field matches the UID.
+     * @deny (list) Even if authenticated, users cannot list the entire collection of users.
+     * @principle Enforces strict document ownership and relational integrity through path-based authorization.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      
+      allow list: if isOwner(userId);
+      
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}

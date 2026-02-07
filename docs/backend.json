@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "UserAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserAccount",
+      "type": "object",
+      "description": "Represents a user account in the E&F WorkBee application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user account."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "accountType": {
+          "type": "string",
+          "description": "The type of user account: 'Worker' or 'Customer'.",
+          "format": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the user"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "accountType",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserAccount",
+          "schema": {
+            "$ref": "#/backend/entities/UserAccount"
+          },
+          "description": "Stores user account information. Uses path-based ownership for secure and simple access control.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user. This is used as the document ID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This design prioritizes simplicity and security for basic user account management. We leverage path-based ownership for user accounts, storing each user's data under `/users/{userId}`. This provides strong isolation and eliminates the need for complex authorization logic. The `UserAccount` entity includes the `accountType`, enabling role-based access control. The path-based approach inherently supports QAPs as listing users requires no complex filtering rules; it simply involves querying a collection."
+  }
+}
