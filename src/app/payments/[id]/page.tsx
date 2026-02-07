@@ -1,17 +1,17 @@
-
 'use client';
 
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, where, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, CreditCard, Lock, ShieldCheck, Info, Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Lock, ShieldCheck, Info, Loader2, AlertTriangle } from 'lucide-react';
 import { initializePayment } from '@/app/actions/payments';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function PaymentPage() {
   const params = useParams();
@@ -27,15 +27,29 @@ export default function PaymentPage() {
     return doc(db, 'jobs', jobId);
   }, [db, jobId]);
 
-  const { data: job, isLoading } = useDoc(jobRef);
+  const { data: job, isLoading: isJobLoading } = useDoc(jobRef);
+
+  // Fetch accepted proposal
+  const proposalsQuery = useMemoFirebase(() => {
+    if (!db || !jobId) return null;
+    return query(
+      collection(db, 'jobs', jobId, 'proposals'),
+      where('status', '==', 'Accepted'),
+      limit(1)
+    );
+  }, [db, jobId]);
+
+  const { data: proposals, isLoading: isProposalsLoading } = useCollection(proposalsQuery);
+  const acceptedProposal = proposals?.[0];
+
+  const isLoading = isJobLoading || isProposalsLoading;
 
   const handlePayNow = async () => {
-    if (!user || !job || !user.email) return;
+    if (!user || !job || !user.email || !acceptedProposal) return;
 
     setIsInitializing(true);
     try {
-      const amount = 15000; // Fixed amount for demo
-      const { url } = await initializePayment(jobId, user.email, amount);
+      const { url } = await initializePayment(jobId, user.email, acceptedProposal.amount);
       window.location.href = url;
     } catch (error: any) {
       toast({
@@ -65,6 +79,10 @@ export default function PaymentPage() {
     );
   }
 
+  const baseAmount = acceptedProposal?.amount || 0;
+  const serviceFee = baseAmount * 0.05;
+  const totalAmount = baseAmount + serviceFee;
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-md mx-auto">
@@ -84,24 +102,34 @@ export default function PaymentPage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Service Amount</span>
-                <span className="font-medium text-foreground">₦15,000.00</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <span>Service Fee (5%)</span>
-                  <Info className="w-3 h-3 cursor-help" />
+            {!acceptedProposal ? (
+              <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Price Not Agreed</AlertTitle>
+                <AlertDescription className="text-xs">
+                  A price must be proposed and accepted in the chat before you can make a payment.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Agreed Service Amount</span>
+                  <span className="font-medium text-foreground">₦{baseAmount.toLocaleString()}</span>
                 </div>
-                <span className="font-medium text-foreground">₦750.00</span>
+                <div className="flex justify-between items-center text-sm">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <span>Service Fee (5%)</span>
+                    <Info className="w-3 h-3 cursor-help" />
+                  </div>
+                  <span className="font-medium text-foreground">₦{serviceFee.toLocaleString()}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Total Amount</span>
+                  <span className="text-primary">₦{totalAmount.toLocaleString()}</span>
+                </div>
               </div>
-              <Separator />
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total Amount</span>
-                <span className="text-primary">₦15,750.00</span>
-              </div>
-            </div>
+            )}
 
             <div className="bg-muted/30 p-4 rounded-lg border border-dashed flex items-start gap-3">
               <ShieldCheck className="w-5 h-5 text-accent shrink-0 mt-0.5" />
@@ -115,7 +143,7 @@ export default function PaymentPage() {
             <Button 
               className="w-full h-12 text-lg font-bold gap-2" 
               onClick={handlePayNow}
-              disabled={isInitializing}
+              disabled={isInitializing || !acceptedProposal}
             >
               {isInitializing ? (
                 <>
