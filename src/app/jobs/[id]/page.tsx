@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection, query, orderBy } from 'firebase/firestore';
-import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -117,6 +118,7 @@ export default function JobDetailsPage() {
   }
 
   const isOwner = user && user.uid === job.customerId;
+  const isSelectedWorker = user && user.uid === job.selectedApplicantId;
   const hasApplied = applications?.some(app => app.applicantId === user?.uid);
   const isAssigned = job.status === 'Assigned';
 
@@ -170,17 +172,25 @@ export default function JobDetailsPage() {
   };
 
   const handleSelectWorker = (applicantId: string, applicantName: string) => {
-    if (!jobDocRef) return;
+    if (!jobDocRef || !db) return;
 
+    // 1. Update the Job
     updateDocumentNonBlocking(jobDocRef, {
       selectedApplicantId: applicantId,
       selectedApplicantName: applicantName,
       status: 'Assigned',
     });
 
+    // 2. Create the Chat Room
+    const chatRoomRef = doc(db, 'chatRooms', jobId);
+    setDocumentNonBlocking(chatRoomRef, {
+      jobId: jobId,
+      participants: [job.customerId, applicantId]
+    }, { merge: true });
+
     toast({
       title: "Worker Selected!",
-      description: `${applicantName} has been assigned to this job.`,
+      description: `${applicantName} has been assigned to this job. Chat enabled.`,
     });
   };
 
@@ -295,14 +305,7 @@ export default function JobDetailsPage() {
 
             {!isEditing && !isAssigned && (
               <div className="pt-6 border-t flex flex-col sm:flex-row gap-4">
-                {isOwner ? (
-                  <Button asChild className="flex-1 gap-2 py-6 text-lg font-bold">
-                    <Link href={`/chat/user-${job.customerId}`}>
-                      <MessageSquare className="w-5 h-5" />
-                      View Conversations
-                    </Link>
-                  </Button>
-                ) : (
+                {!isOwner && (
                   <Button 
                     onClick={handleApply} 
                     disabled={isApplying || hasApplied} 
@@ -324,17 +327,26 @@ export default function JobDetailsPage() {
               </div>
             )}
 
-            {isAssigned && (
+            {isAssigned && (isOwner || isSelectedWorker) && (
               <div className="pt-6 border-t">
-                <div className="bg-green-50 border border-green-100 rounded-lg p-4 flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-green-800">Worker Selected</h4>
-                    <p className="text-sm text-green-700">
-                      This job has been assigned to <strong>{job.selectedApplicantName}</strong>. 
-                      You can now coordinate via chat.
-                    </p>
+                <div className="bg-green-50 border border-green-100 rounded-lg p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-green-800">Worker Assigned</h4>
+                      <p className="text-sm text-green-700">
+                        {isOwner 
+                          ? `You've hired ${job.selectedApplicantName}. Coordinate the details via chat.` 
+                          : `You've been selected for this job! Coordinate with the owner via chat.`}
+                      </p>
+                    </div>
                   </div>
+                  <Button asChild className="shrink-0 gap-2 bg-green-600 hover:bg-green-700">
+                    <Link href={`/chat/${jobId}`}>
+                      <MessageSquare className="w-4 h-4" />
+                      Open Chat
+                    </Link>
+                  </Button>
                 </div>
               </div>
             )}
@@ -394,12 +406,14 @@ export default function JobDetailsPage() {
                             Select Worker
                           </Button>
                         )}
-                        <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary/80">
-                          <Link href={`/chat/${app.applicantId}`}>
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            Message
-                          </Link>
-                        </Button>
+                        {isAssigned && job.selectedApplicantId === app.applicantId && (
+                          <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                            <Link href={`/chat/${jobId}`}>
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              Open Chat
+                            </Link>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}

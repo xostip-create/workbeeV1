@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -133,6 +134,55 @@
         "applicantId",
         "applicantName"
       ]
+    },
+    "ChatRoom": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatRoom",
+      "type": "object",
+      "description": "A communication channel between a customer and a selected worker for a job.",
+      "properties": {
+        "jobId": {
+          "type": "string",
+          "description": "The ID of the job this chat is linked to."
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of user UIDs participating in the chat."
+        }
+      },
+      "required": [
+        "jobId",
+        "participants"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "A single message within a chat room.",
+      "properties": {
+        "senderId": {
+          "type": "string",
+          "description": "UID of the user who sent the message."
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the message."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the message was sent."
+        }
+      },
+      "required": [
+        "senderId",
+        "text",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -159,6 +209,18 @@
         "$ref": "#/backend/entities/JobApplication"
       },
       "description": "Stores applications for a specific job."
+    },
+    "/chatRooms/{jobId}": {
+      "schema": {
+        "$ref": "#/backend/entities/ChatRoom"
+      },
+      "description": "Stores chat room metadata. The roomId matches the jobId."
+    },
+    "/chatRooms/{jobId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Message"
+      },
+      "description": "Stores messages for a specific chat room."
     }
   }
 }

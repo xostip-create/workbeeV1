@@ -14,6 +14,10 @@ service cloud.firestore {
       return isSignedIn() && get(/databases/$(database)/documents/jobs/$(jobId)).data.customerId == request.auth.uid;
     }
 
+    function isChatParticipant(jobId) {
+      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(jobId)).data.participants;
+    }
+
     match /users/{userId} {
       allow get, list: if isSignedIn();
       allow create: if isOwner(userId);
@@ -29,6 +33,16 @@ service cloud.firestore {
       match /applications/{applicationId} {
         allow read: if isSignedIn() && (isJobOwner(jobId) || resource.data.applicantId == request.auth.uid);
         allow create: if isSignedIn();
+      }
+    }
+
+    match /chatRooms/{jobId} {
+      allow get: if isSignedIn() && (request.auth.uid in resource.data.participants || request.auth.uid in request.resource.data.participants);
+      allow create: if isSignedIn();
+      
+      match /messages/{messageId} {
+        allow read: if isChatParticipant(jobId);
+        allow create: if isChatParticipant(jobId);
       }
     }
   }
