@@ -2,12 +2,14 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, Info, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
 /**
- * Placeholder screen for viewing single job details.
+ * Enhanced Job Details Placeholder.
+ * Includes a link to Chat.
  */
 export default function JobDetailsPage() {
   const params = useParams();
@@ -18,26 +20,31 @@ export default function JobDetailsPage() {
       <Button asChild variant="ghost" className="mb-6 gap-2">
         <Link href="/jobs">
           <ArrowLeft className="w-4 h-4" />
-          Back to Find Jobs
+          Back to Jobs
         </Link>
       </Button>
       
-      <div className="max-w-2xl mx-auto bg-card border rounded-lg p-8 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <Info className="w-6 h-6 text-primary" />
-          <h1 className="text-3xl font-bold font-headline text-foreground">Job Details</h1>
-        </div>
-        
-        <div className="space-y-4">
-          <p className="text-muted-foreground">
-            This is a placeholder screen for viewing the details of a specific job listing.
-          </p>
-          <div className="p-4 bg-muted/30 rounded-md border border-dashed">
-            <span className="text-sm font-medium text-muted-foreground uppercase tracking-tight">System Reference:</span>
-            <p className="font-mono text-sm mt-1">{jobId || 'N/A'}</p>
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Info className="w-6 h-6 text-primary" />
+            <CardTitle className="text-3xl font-bold font-headline">Job Details</CardTitle>
           </div>
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="p-4 bg-muted/30 rounded-md border border-dashed">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Job ID: {jobId}</span>
+            <p className="mt-2">This is a placeholder for the full job description, location, and budget details.</p>
+          </div>
+          
+          <Button asChild className="w-full gap-2 py-6 text-lg font-bold">
+            <Link href={`/chat/user-${jobId}`}>
+              <MessageSquare className="w-5 h-5" />
+              Chat with Customer
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
