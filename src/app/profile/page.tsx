@@ -1,19 +1,26 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Shield, ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { User, Mail, Shield, ArrowLeft, Edit2, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
+  const { toast } = useToast();
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState('');
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !db) return null;
@@ -21,6 +28,12 @@ export default function ProfilePage() {
   }, [user, db]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
+
+  useEffect(() => {
+    if (profile?.name) {
+      setEditedName(profile.name);
+    }
+  }, [profile]);
 
   if (isUserLoading || isProfileLoading) {
     return (
@@ -50,6 +63,26 @@ export default function ProfilePage() {
     );
   }
 
+  const handleSave = () => {
+    if (!userDocRef || !editedName.trim()) return;
+
+    updateDocumentNonBlocking(userDocRef, {
+      name: editedName.trim(),
+    });
+
+    toast({
+      title: 'Profile updated',
+      description: 'Your changes have been saved successfully.',
+    });
+    
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditedName(profile?.name || '');
+    setIsEditing(false);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
@@ -61,25 +94,43 @@ export default function ProfilePage() {
         </Button>
 
         <Card className="shadow-lg">
-          <CardHeader className="border-b bg-muted/30">
+          <CardHeader className="border-b bg-muted/30 flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white text-2xl font-bold">
                 {profile?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
               </div>
               <div>
                 <CardTitle className="text-3xl font-bold">{profile?.name || 'User Profile'}</CardTitle>
-                <CardDescription>View your account information</CardDescription>
+                <CardDescription>View and manage your account information</CardDescription>
               </div>
             </div>
+            {!isEditing && (
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
+                <Edit2 className="w-4 h-4" />
+                Edit
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium uppercase tracking-wider">
                   <User className="w-4 h-4" />
                   Full Name
                 </div>
-                <p className="text-lg font-medium">{profile?.name || 'Not provided'}</p>
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      placeholder="Enter your name"
+                      className="text-lg h-12"
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <p className="text-lg font-medium">{profile?.name || 'Not provided'}</p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -87,7 +138,7 @@ export default function ProfilePage() {
                   <Mail className="w-4 h-4" />
                   Email Address
                 </div>
-                <p className="text-lg font-medium">{user.email}</p>
+                <p className="text-lg font-medium text-muted-foreground">{user.email}</p>
               </div>
 
               <div className="space-y-1">
@@ -103,6 +154,18 @@ export default function ProfilePage() {
               </div>
             </div>
           </CardContent>
+          {isEditing && (
+            <CardFooter className="border-t bg-muted/10 p-4 flex justify-end gap-3">
+              <Button variant="ghost" onClick={handleCancel} className="gap-2">
+                <X className="w-4 h-4" />
+                Cancel
+              </Button>
+              <Button onClick={handleSave} className="gap-2 bg-accent hover:bg-accent/90">
+                <Check className="w-4 h-4" />
+                Save Changes
+              </Button>
+            </CardFooter>
+          )}
         </Card>
       </div>
     </div>
