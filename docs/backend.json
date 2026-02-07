@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -77,6 +76,22 @@
         "customerId": {
           "type": "string",
           "description": "The UID of the user who posted the job."
+        },
+        "selectedApplicantId": {
+          "type": "string",
+          "description": "The UID of the worker selected for the job."
+        },
+        "selectedApplicantName": {
+          "type": "string",
+          "description": "The name of the worker selected for the job."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the job (e.g., 'Open', 'Assigned').",
+          "enum": [
+            "Open",
+            "Assigned"
+          ]
         },
         "createdAt": {
           "type": "string",

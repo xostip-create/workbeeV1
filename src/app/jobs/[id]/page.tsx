@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -24,7 +23,9 @@ import {
   Save, 
   X,
   UserCheck,
-  Send
+  Send,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -41,9 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 /**
- * Job Details Page with Ownership Management and Applications.
- * Allows creators to edit or delete their postings and view applicants.
- * Allows other users to apply for the job.
+ * Job Details Page with Ownership Management, Applications, and Worker Selection.
  */
 export default function JobDetailsPage() {
   const params = useParams();
@@ -119,6 +118,7 @@ export default function JobDetailsPage() {
 
   const isOwner = user && user.uid === job.customerId;
   const hasApplied = applications?.some(app => app.applicantId === user?.uid);
+  const isAssigned = job.status === 'Assigned';
 
   const handleSave = () => {
     if (!jobDocRef) return;
@@ -169,6 +169,21 @@ export default function JobDetailsPage() {
     });
   };
 
+  const handleSelectWorker = (applicantId: string, applicantName: string) => {
+    if (!jobDocRef) return;
+
+    updateDocumentNonBlocking(jobDocRef, {
+      selectedApplicantId: applicantId,
+      selectedApplicantName: applicantName,
+      status: 'Assigned',
+    });
+
+    toast({
+      title: "Worker Selected!",
+      description: `${applicantName} has been assigned to this job.`,
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Button asChild variant="ghost" className="mb-6 gap-2">
@@ -184,9 +199,13 @@ export default function JobDetailsPage() {
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="space-y-2 flex-1">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                    <Briefcase className="w-3 h-3 mr-1" />
-                    Open Request
+                  <Badge variant={isAssigned ? "secondary" : "outline"} className={isAssigned ? "bg-green-100 text-green-700 border-green-200" : "bg-primary/5 text-primary border-primary/20"}>
+                    {isAssigned ? (
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                    ) : (
+                      <Briefcase className="w-3 h-3 mr-1" />
+                    )}
+                    {isAssigned ? `Assigned to ${job.selectedApplicantName}` : 'Open Request'}
                   </Badge>
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3" />
@@ -274,7 +293,7 @@ export default function JobDetailsPage() {
               )}
             </section>
 
-            {!isEditing && (
+            {!isEditing && !isAssigned && (
               <div className="pt-6 border-t flex flex-col sm:flex-row gap-4">
                 {isOwner ? (
                   <Button asChild className="flex-1 gap-2 py-6 text-lg font-bold">
@@ -304,6 +323,21 @@ export default function JobDetailsPage() {
                 )}
               </div>
             )}
+
+            {isAssigned && (
+              <div className="pt-6 border-t">
+                <div className="bg-green-50 border border-green-100 rounded-lg p-4 flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-green-800">Worker Selected</h4>
+                    <p className="text-sm text-green-700">
+                      This job has been assigned to <strong>{job.selectedApplicantName}</strong>. 
+                      You can now coordinate via chat.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -311,9 +345,16 @@ export default function JobDetailsPage() {
         {isOwner && (
           <Card className="shadow-md">
             <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" />
-                Applicants ({applications?.length || 0})
+              <CardTitle className="text-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary" />
+                  Applicants ({applications?.length || 0})
+                </div>
+                {isAssigned && (
+                   <Badge variant="secondary" className="bg-green-100 text-green-700">
+                     Hired: {job.selectedApplicantName}
+                   </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -327,22 +368,39 @@ export default function JobDetailsPage() {
                   {applications.map((app) => (
                     <div key={app.id} className="py-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                          {app.applicantName.charAt(0)}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${job.selectedApplicantId === app.applicantId ? 'bg-green-500 text-white' : 'bg-primary/10 text-primary'}`}>
+                          {job.selectedApplicantId === app.applicantId ? <CheckCircle2 className="w-6 h-6" /> : app.applicantName.charAt(0)}
                         </div>
                         <div>
-                          <p className="font-bold text-sm">{app.applicantName}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm">{app.applicantName}</p>
+                            {job.selectedApplicantId === app.applicantId && (
+                              <Badge className="bg-green-500 text-white text-[10px] py-0 px-1">Selected</Badge>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             Applied on {new Date(app.appliedAt).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
-                      <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary/80">
-                        <Link href={`/chat/${app.applicantId}`}>
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          Message
-                        </Link>
-                      </Button>
+                      <div className="flex gap-2">
+                        {!isAssigned && (
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="bg-green-500 text-white hover:bg-green-600"
+                            onClick={() => handleSelectWorker(app.applicantId, app.applicantName)}
+                          >
+                            Select Worker
+                          </Button>
+                        )}
+                        <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                          <Link href={`/chat/${app.applicantId}`}>
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            Message
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
