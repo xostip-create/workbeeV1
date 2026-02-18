@@ -2,16 +2,22 @@
 {
   "placeholderImages": [
     {
-      "id": "hero-worker",
-      "description": "Professional workers collaborating",
-      "imageUrl": "https://picsum.photos/seed/workbee1/1200/800",
-      "imageHint": "professional workers"
+      "id": "hero-main",
+      "description": "Happy professional worker with tools",
+      "imageUrl": "https://picsum.photos/seed/workbee_hero/1200/800",
+      "imageHint": "professional repairman"
     },
     {
-      "id": "hero-shop",
-      "description": "Local shop front",
-      "imageUrl": "https://picsum.photos/seed/workbee2/800/600",
-      "imageHint": "local shop"
+      "id": "trust-security",
+      "description": "Secure digital payment illustration",
+      "imageUrl": "https://picsum.photos/seed/workbee_trust/600/400",
+      "imageHint": "secure payment"
+    },
+    {
+      "id": "community",
+      "description": "People shaking hands in a local community",
+      "imageUrl": "https://picsum.photos/seed/workbee_community/600/400",
+      "imageHint": "community handshake"
     }
   ]
 }
