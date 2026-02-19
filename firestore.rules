@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // PUBLIC ACCESS - ALLOW ALL READS AND WRITES
     // This allows the community to browse jobs, workers, and negotiate freely.
-    // Deployment Sync Token: force-redeploy-v1-jobs-list-fix
+    // Deployment Sync Token: force-redeploy-v2-absolute-public-access
     
     match /{document=**} {
       allow read, write: if true;

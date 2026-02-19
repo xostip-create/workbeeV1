@@ -7,7 +7,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Briefcase, Eye, Clock } from 'lucide-react';
+import { ArrowLeft, Briefcase, Eye, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function FindJobPage() {
@@ -18,7 +18,7 @@ export default function FindJobPage() {
     return query(collection(db, 'jobs'), orderBy('createdAt', 'desc'));
   }, [db]);
 
-  const { data: jobs, isLoading } = useCollection(jobsQuery);
+  const { data: jobs, isLoading, error } = useCollection(jobsQuery);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -33,6 +33,13 @@ export default function FindJobPage() {
         <h1 className="text-3xl font-bold font-headline">Find a Job</h1>
         <p className="text-muted-foreground mt-2">Browse open requests from the community.</p>
       </div>
+
+      {error && (
+        <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive">
+          <AlertCircle className="w-5 h-5" />
+          <p className="text-sm font-medium">Could not load jobs. Please check your connection or security permissions.</p>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
