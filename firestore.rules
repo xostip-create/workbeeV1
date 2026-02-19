@@ -10,6 +10,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     function isJobOwner(jobId) {
       return isSignedIn() && get(/databases/$(database)/documents/jobs/$(jobId)).data.customerId == request.auth.uid;
     }
@@ -21,8 +25,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get, list: if isSignedIn();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
 
       match /reviews/{reviewId} {
         allow read: if isSignedIn();
@@ -33,32 +37,32 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.customerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.customerId == request.auth.uid || isAdmin());
 
       match /applications/{applicationId} {
-        allow read: if isSignedIn() && (isJobOwner(jobId) || resource.data.applicantId == request.auth.uid);
+        allow read: if isSignedIn() && (isJobOwner(jobId) || resource.data.applicantId == request.auth.uid || isAdmin());
         allow create: if isSignedIn();
       }
 
       match /proposals/{proposalId} {
-        allow read: if isSignedIn() && (isJobOwner(jobId) || request.auth.uid == resource.data.proposerId || request.auth.uid == resource.data.recipientId);
+        allow read: if isSignedIn() && (isJobOwner(jobId) || request.auth.uid == resource.data.proposerId || request.auth.uid == resource.data.recipientId || isAdmin());
         allow create: if isSignedIn();
-        allow update: if isSignedIn() && (request.auth.uid == resource.data.proposerId || request.auth.uid == resource.data.recipientId);
+        allow update: if isSignedIn() && (request.auth.uid == resource.data.proposerId || request.auth.uid == resource.data.recipientId || isAdmin());
       }
     }
 
     match /chatRooms/{jobId} {
-      allow get: if isSignedIn() && (request.auth.uid in resource.data.participants || request.auth.uid in request.resource.data.participants);
+      allow get: if isSignedIn() && (request.auth.uid in resource.data.participants || request.auth.uid in request.resource.data.participants || isAdmin());
       allow create: if isSignedIn();
       
       match /messages/{messageId} {
-        allow read: if isChatParticipant(jobId);
+        allow read: if isChatParticipant(jobId) || isAdmin();
         allow create: if isChatParticipant(jobId);
       }
     }
 
     match /payments/{paymentId} {
-      allow read: if isSignedIn() && (resource.data.customerId == request.auth.uid || isJobOwner(resource.data.jobId));
+      allow read: if isSignedIn() && (resource.data.customerId == request.auth.uid || isJobOwner(resource.data.jobId) || isAdmin());
       allow create: if isSignedIn();
     }
   }

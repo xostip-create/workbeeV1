@@ -32,6 +32,21 @@
             "Customer"
           ]
         },
+        "status": {
+          "type": "string",
+          "description": "The approval status of the user (mainly for workers).",
+          "enum": [
+            "Pending",
+            "Approved",
+            "Suspended"
+          ],
+          "default": "Approved"
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Whether the user has administrative privileges.",
+          "default": false
+        },
         "photoUrl": {
           "type": "string",
           "description": "URL to the user's profile photo."
