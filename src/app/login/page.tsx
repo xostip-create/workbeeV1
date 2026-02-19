@@ -1,10 +1,10 @@
-
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
+  const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -25,8 +26,23 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Fetch user profile to determine redirect
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const profile = userDoc.data();
+
+      toast({
+        title: 'Login successful',
+        description: `Welcome back, ${profile?.name || 'User'}.`,
+      });
+
+      if (profile?.accountType === 'Worker') {
+        router.push('/worker-dashboard');
+      } else {
+        router.push('/');
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',

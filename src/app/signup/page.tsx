@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -54,7 +53,11 @@ export default function SignupPage() {
         description: `Welcome to WorkBee, ${name}.`,
       });
 
-      router.push('/');
+      if (accountType === 'Worker') {
+        router.push('/worker-dashboard');
+      } else {
+        router.push('/');
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',

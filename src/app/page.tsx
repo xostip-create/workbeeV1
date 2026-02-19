@@ -19,7 +19,8 @@ import {
   Users,
   Star,
   ArrowRight,
-  ShieldAlert
+  ShieldAlert,
+  LayoutDashboard
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -112,12 +113,28 @@ export default function LandingPage() {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      {profile?.accountType === 'Worker' && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/worker-dashboard" className="cursor-pointer w-full flex items-center text-primary font-bold">
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            <span>Worker Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem asChild>
                         <Link href="/profile" className="cursor-pointer w-full flex items-center">
                           <UserIcon className="mr-2 h-4 w-4" />
                           <span>Profile</span>
                         </Link>
                       </DropdownMenuItem>
+                      {profile?.isAdmin && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin" className="cursor-pointer w-full flex items-center text-amber-600">
+                            <Settings2 className="mr-2 h-4 w-4" />
+                            <span>Admin Panel</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
