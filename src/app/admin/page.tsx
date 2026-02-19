@@ -53,28 +53,28 @@ export default function AdminDashboardPage() {
   }, [db, user]);
   const { data: adminProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
-  // Fetch all users
+  // Fetch all users - only if admin status is confirmed
   const usersQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || !adminProfile?.isAdmin) return null;
     return query(collection(db, 'users'), limit(100));
-  }, [db]);
+  }, [db, adminProfile]);
   const { data: users, isLoading: isLoadingUsers } = useCollection(usersQuery);
 
-  // Fetch all jobs
+  // Fetch all jobs - only if admin status is confirmed
   const jobsQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || !adminProfile?.isAdmin) return null;
     return query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(100));
-  }, [db]);
+  }, [db, adminProfile]);
   const { data: jobs, isLoading: isLoadingJobs } = useCollection(jobsQuery);
 
-  // Fetch all payments
+  // Fetch all payments - only if admin status is confirmed
   const paymentsQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || !adminProfile?.isAdmin) return null;
     return query(collection(db, 'payments'), orderBy('paidAt', 'desc'), limit(100));
-  }, [db]);
+  }, [db, adminProfile]);
   const { data: payments, isLoading: isLoadingPayments } = useCollection(paymentsQuery);
 
-  const isLoading = isUserLoading || isProfileLoading || isLoadingUsers || isLoadingJobs || isLoadingPayments;
+  const isLoading = isUserLoading || isProfileLoading;
 
   const handleUpdateUserStatus = (userId: string, status: 'Approved' | 'Suspended') => {
     if (!db) return;
@@ -222,34 +222,36 @@ export default function AdminDashboardPage() {
                 <CardDescription>View status and participants for current service requests.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Job Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Worker</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {jobs?.map((job) => (
-                      <TableRow key={job.id}>
-                        <TableCell className="font-bold">{job.title}</TableCell>
-                        <TableCell>
-                          <Badge variant={job.status === 'Completed' ? 'default' : job.status === 'In Progress' ? 'secondary' : 'outline'}>
-                            {job.status || 'Open'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">{job.customerId}</TableCell>
-                        <TableCell className="text-xs">{job.selectedApplicantName || 'None Assigned'}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
-                        </TableCell>
+                {isLoadingJobs ? <Loader2 className="w-6 h-6 animate-spin mx-auto py-8" /> : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Job Title</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Worker</TableHead>
+                        <TableHead>Date</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {jobs?.map((job) => (
+                        <TableRow key={job.id}>
+                          <TableCell className="font-bold">{job.title}</TableCell>
+                          <TableCell>
+                            <Badge variant={job.status === 'Completed' ? 'default' : job.status === 'In Progress' ? 'secondary' : 'outline'}>
+                              {job.status || 'Open'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">{job.customerId}</TableCell>
+                          <TableCell className="text-xs">{job.selectedApplicantName || 'None Assigned'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -261,83 +263,85 @@ export default function AdminDashboardPage() {
                 <CardDescription>Manage both workers and customers. Approve or suspend workers to ensure quality.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Availability</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users?.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-bold">{u.name}</span>
-                            <span className="text-[10px] text-muted-foreground">{u.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={u.accountType === 'Worker' ? 'default' : 'outline'}>
-                            {u.accountType}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="secondary" 
-                            className={
-                              u.status === 'Approved' ? 'bg-green-100 text-green-700' : 
-                              u.status === 'Suspended' ? 'bg-red-100 text-red-700' : 
-                              'bg-amber-100 text-amber-700'
-                            }
-                          >
-                            {u.status || 'Approved'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {u.accountType === 'Worker' && (
-                            <div className="flex items-center gap-1 text-[10px]">
-                              {u.isAvailable !== false ? (
-                                <><span className="w-2 h-2 bg-green-500 rounded-full" /> Available</>
-                              ) : (
-                                <><span className="w-2 h-2 bg-slate-400 rounded-full" /> Busy</>
-                              )}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {u.accountType === 'Worker' && (
-                            <div className="flex justify-end gap-2">
-                              {u.status !== 'Approved' && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-8 text-[10px] border-green-200 text-green-700 hover:bg-green-50"
-                                  onClick={() => handleUpdateUserStatus(u.id, 'Approved')}
-                                >
-                                  <UserCheck className="w-3 h-3 mr-1" /> Approve
-                                </Button>
-                              )}
-                              {u.status !== 'Suspended' && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-8 text-[10px] border-red-200 text-red-700 hover:bg-red-50"
-                                  onClick={() => handleUpdateUserStatus(u.id, 'Suspended')}
-                                >
-                                  <UserX className="w-3 h-3 mr-1" /> Suspend
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </TableCell>
+                {isLoadingUsers ? <Loader2 className="w-6 h-6 animate-spin mx-auto py-8" /> : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Availability</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {users?.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-bold">{u.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{u.email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={u.accountType === 'Worker' ? 'default' : 'outline'}>
+                              {u.accountType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="secondary" 
+                              className={
+                                u.status === 'Approved' ? 'bg-green-100 text-green-700' : 
+                                u.status === 'Suspended' ? 'bg-red-100 text-red-700' : 
+                                'bg-amber-100 text-amber-700'
+                              }
+                            >
+                              {u.status || 'Approved'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {u.accountType === 'Worker' && (
+                              <div className="flex items-center gap-1 text-[10px]">
+                                {u.isAvailable !== false ? (
+                                  <><span className="w-2 h-2 bg-green-500 rounded-full" /> Available</>
+                                ) : (
+                                  <><span className="w-2 h-2 bg-slate-400 rounded-full" /> Busy</>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {u.accountType === 'Worker' && (
+                              <div className="flex justify-end gap-2">
+                                {u.status !== 'Approved' && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-8 text-[10px] border-green-200 text-green-700 hover:bg-green-50"
+                                    onClick={() => handleUpdateUserStatus(u.id, 'Approved')}
+                                  >
+                                    <UserCheck className="w-3 h-3 mr-1" /> Approve
+                                  </Button>
+                                )}
+                                {u.status !== 'Suspended' && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-8 text-[10px] border-red-200 text-red-700 hover:bg-red-50"
+                                    onClick={() => handleUpdateUserStatus(u.id, 'Suspended')}
+                                  >
+                                    <UserX className="w-3 h-3 mr-1" /> Suspend
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -349,32 +353,34 @@ export default function AdminDashboardPage() {
                 <CardDescription>Complete log of payments processed via Paystack.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Job ID</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments?.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="text-xs font-medium">{p.jobId}</TableCell>
-                        <TableCell className="font-bold">₦{(p.amount || 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{p.reference}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="bg-green-100 text-green-700">Paid</Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : 'N/A'}
-                        </TableCell>
+                {isLoadingPayments ? <Loader2 className="w-6 h-6 animate-spin mx-auto py-8" /> : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Job ID</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Reference</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {payments?.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="text-xs font-medium">{p.jobId}</TableCell>
+                          <TableCell className="font-bold">₦{(p.amount || 0).toLocaleString()}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{p.reference}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="bg-green-100 text-green-700">Paid</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

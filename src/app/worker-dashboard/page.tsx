@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -42,30 +43,30 @@ export default function WorkerDashboardPage() {
   }, [db, user]);
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // Fetch jobs where the worker is selected (Active/Completed)
+  // Fetch jobs where the worker is selected (Active/Completed) - only if profile loaded
   const myJobsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
+    if (!db || !user || !profile) return null;
     return query(
       collection(db, 'jobs'),
       where('selectedApplicantId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
-  }, [db, user]);
+  }, [db, user, profile]);
   const { data: myJobs, isLoading: isLoadingMyJobs } = useCollection(myJobsQuery);
 
-  // Fetch open jobs (Available Gigs)
+  // Fetch open jobs (Available Gigs) - only if profile loaded
   const openJobsQuery = useMemoFirebase(() => {
-    if (!db) return null;
+    if (!db || !profile) return null;
     return query(
       collection(db, 'jobs'),
       where('status', '==', 'Open'),
       orderBy('createdAt', 'desc'),
       limit(5)
     );
-  }, [db]);
+  }, [db, profile]);
   const { data: openJobs, isLoading: isLoadingOpenJobs } = useCollection(openJobsQuery);
 
-  const isLoading = isUserLoading || isProfileLoading || isLoadingMyJobs || isLoadingOpenJobs;
+  const isLoading = isUserLoading || isProfileLoading;
 
   if (isLoading) {
     return (
@@ -191,7 +192,7 @@ export default function WorkerDashboardPage() {
                 Current Active Jobs
               </h3>
             </div>
-            {activeJobs.length > 0 ? (
+            {isLoadingMyJobs ? <Loader2 className="w-6 h-6 animate-spin mx-auto py-8" /> : activeJobs.length > 0 ? (
               <div className="space-y-4">
                 {activeJobs.map(job => (
                   <Card key={job.id} className="border-none shadow-sm hover:shadow-md transition-shadow">
@@ -242,7 +243,7 @@ export default function WorkerDashboardPage() {
               </Button>
             </div>
             <div className="space-y-4">
-              {openJobs && openJobs.length > 0 ? (
+              {isLoadingOpenJobs ? <Loader2 className="w-6 h-6 animate-spin mx-auto py-8" /> : openJobs && openJobs.length > 0 ? (
                 openJobs.map(job => (
                   <Card key={job.id} className="border-none shadow-sm hover:shadow-md transition-shadow bg-white">
                     <CardHeader className="pb-3">

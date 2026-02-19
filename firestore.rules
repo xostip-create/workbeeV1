@@ -11,15 +11,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
     function isJobOwner(jobId) {
-      return isSignedIn() && get(/databases/$(database)/documents/jobs/$(jobId)).data.customerId == request.auth.uid;
+      return isSignedIn() && exists(/databases/$(database)/documents/jobs/$(jobId)) && get(/databases/$(database)/documents/jobs/$(jobId)).data.customerId == request.auth.uid;
     }
 
     function isChatParticipant(jobId) {
-      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(jobId)).data.participants;
+      return isSignedIn() && exists(/databases/$(database)/documents/chatRooms/$(jobId)) && request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(jobId)).data.participants;
     }
 
     match /users/{userId} {
@@ -35,17 +35,17 @@ service cloud.firestore {
     }
 
     match /jobs/{jobId} {
-      allow read: if isSignedIn();
+      allow get, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update, delete: if isSignedIn() && (resource.data.customerId == request.auth.uid || isAdmin());
 
       match /applications/{applicationId} {
-        allow read: if isSignedIn() && (isJobOwner(jobId) || resource.data.applicantId == request.auth.uid || isAdmin());
+        allow get, list: if isSignedIn() && (isJobOwner(jobId) || resource.data.applicantId == request.auth.uid || isAdmin());
         allow create: if isSignedIn();
       }
 
       match /proposals/{proposalId} {
-        allow read: if isSignedIn() && (isJobOwner(jobId) || request.auth.uid == resource.data.proposerId || request.auth.uid == resource.data.recipientId || isAdmin());
+        allow get, list: if isSignedIn() && (isJobOwner(jobId) || request.auth.uid == resource.data.proposerId || request.auth.uid == resource.data.recipientId || isAdmin());
         allow create: if isSignedIn();
         allow update: if isSignedIn() && (request.auth.uid == resource.data.proposerId || request.auth.uid == resource.data.recipientId || isAdmin());
       }
@@ -62,7 +62,8 @@ service cloud.firestore {
     }
 
     match /payments/{paymentId} {
-      allow read: if isSignedIn() && (resource.data.customerId == request.auth.uid || isJobOwner(resource.data.jobId) || isAdmin());
+      allow get: if isSignedIn() && (resource.data.customerId == request.auth.uid || isJobOwner(resource.data.jobId) || isAdmin());
+      allow list: if isAdmin();
       allow create: if isSignedIn();
     }
   }
