@@ -36,6 +36,7 @@ export default function PostJobPage() {
       title,
       description,
       customerId: user.uid,
+      status: 'Open', // Explicitly setting initial status to Open
       createdAt: new Date().toISOString(),
     })
     .then(() => {
@@ -43,7 +44,7 @@ export default function PostJobPage() {
         title: "Job Posted!",
         description: "Your request has been added to the hive.",
       });
-      router.push('/jobs');
+      router.push('/customer-dashboard'); // Redirecting back to dashboard
     })
     .catch(() => {
       setIsSubmitting(false);

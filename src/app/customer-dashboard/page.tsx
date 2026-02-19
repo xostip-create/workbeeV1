@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,15 +50,25 @@ export default function CustomerDashboardPage() {
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
   // Fetch jobs posted by this customer
+  // Removed orderBy to avoid index requirements for now, sorting locally instead
   const myJobsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
       collection(db, 'jobs'),
-      where('customerId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('customerId', '==', user.uid)
     );
   }, [db, user]);
-  const { data: myJobs, isLoading: isLoadingMyJobs } = useCollection(myJobsQuery);
+  const { data: myJobsRaw, isLoading: isLoadingMyJobs } = useCollection(myJobsQuery);
+
+  // Sort jobs locally by createdAt descending
+  const myJobs = React.useMemo(() => {
+    if (!myJobsRaw) return [];
+    return [...myJobsRaw].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [myJobsRaw]);
 
   const isLoading = isUserLoading || isProfileLoading;
 
@@ -89,9 +99,9 @@ export default function CustomerDashboardPage() {
     );
   }
 
-  const activeJobs = myJobs?.filter(j => j.status === 'In Progress') || [];
-  const openJobs = myJobs?.filter(j => !j.status || j.status === 'Open') || [];
-  const completedJobs = myJobs?.filter(j => j.status === 'Completed') || [];
+  const activeJobs = myJobs.filter(j => j.status === 'In Progress');
+  const openJobs = myJobs.filter(j => !j.status || j.status === 'Open');
+  const completedJobs = myJobs.filter(j => j.status === 'Completed');
   const totalSpent = completedJobs.reduce((acc, j) => acc + (j.totalPrice || 0), 0);
 
   return (
