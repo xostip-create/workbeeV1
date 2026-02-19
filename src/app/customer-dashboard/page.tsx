@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -24,7 +25,8 @@ import {
   Calendar,
   ChevronRight,
   Search,
-  Users
+  Users,
+  Home
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -97,12 +99,16 @@ export default function CustomerDashboardPage() {
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
               <LayoutDashboard className="w-5 h-5 text-primary" />
             </div>
-            <h1 className="text-lg font-bold font-headline hidden sm:block">Customer Hub</h1>
-          </div>
+            <div>
+              <h1 className="text-lg font-bold font-headline leading-none hidden sm:block">Customer Hub</h1>
+              <h1 className="text-lg font-bold font-headline leading-none sm:hidden">Hive</h1>
+              <p className="text-[10px] text-primary font-bold uppercase mt-0.5 tracking-tight group-hover:underline">WorkBee Home</p>
+            </div>
+          </Link>
           
           <div className="flex items-center gap-4">
             <Link href="/profile">
