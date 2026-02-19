@@ -2,7 +2,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // PUBLIC ACCESS - ALLOW ALL READS AND WRITES
+    // This allows the community to browse jobs, workers, and negotiate freely.
+    // Deployment Sync Token: force-redeploy-v1-jobs-list-fix
+    
     match /{document=**} {
+      allow read, write: if true;
+    }
+
+    // Explicitly covering top-level collections just to be extra sure
+    match /users/{userId} {
+      allow read, write: if true;
+      match /{allSubcollections=**} { allow read, write: if true; }
+    }
+    
+    match /jobs/{jobId} {
+      allow read, write: if true;
+      match /{allSubcollections=**} { allow read, write: if true; }
+    }
+    
+    match /chatRooms/{roomId} {
+      allow read, write: if true;
+      match /{allSubcollections=**} { allow read, write: if true; }
+    }
+    
+    match /payments/{paymentId} {
       allow read, write: if true;
     }
   }
