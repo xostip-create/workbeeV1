@@ -55,6 +55,8 @@ export default function SignupPage() {
 
       if (accountType === 'Worker') {
         router.push('/worker-dashboard');
+      } else if (accountType === 'Customer') {
+        router.push('/customer-dashboard');
       } else {
         router.push('/');
       }

@@ -121,6 +121,14 @@ export default function LandingPage() {
                           </Link>
                         </DropdownMenuItem>
                       )}
+                      {profile?.accountType === 'Customer' && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/customer-dashboard" className="cursor-pointer w-full flex items-center text-primary font-bold">
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            <span>Customer Hub</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem asChild>
                         <Link href="/profile" className="cursor-pointer w-full flex items-center">
                           <UserIcon className="mr-2 h-4 w-4" />

@@ -40,6 +40,8 @@ export default function LoginPage() {
 
       if (profile?.accountType === 'Worker') {
         router.push('/worker-dashboard');
+      } else if (profile?.accountType === 'Customer') {
+        router.push('/customer-dashboard');
       } else {
         router.push('/');
       }
