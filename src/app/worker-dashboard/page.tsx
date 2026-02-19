@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { doc, collection, query, where, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,7 @@ import { Separator } from '@/components/ui/separator';
 /**
  * Enhanced Dashboard for Workers.
  * Provides a professional overview of active contracts, earnings, and new opportunities.
+ * Uses client-side sorting to bypass Firestore index requirements.
  */
 export default function WorkerDashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -54,11 +55,10 @@ export default function WorkerDashboardPage() {
     if (!db || !user) return null;
     return query(
       collection(db, 'jobs'),
-      where('selectedApplicantId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('selectedApplicantId', '==', user.uid)
     );
   }, [db, user]);
-  const { data: myJobs, isLoading: isLoadingMyJobs } = useCollection(myJobsQuery);
+  const { data: myJobsRaw, isLoading: isLoadingMyJobs } = useCollection(myJobsQuery);
 
   // Fetch open jobs (Available Opportunities)
   const openJobsQuery = useMemoFirebase(() => {
@@ -66,11 +66,31 @@ export default function WorkerDashboardPage() {
     return query(
       collection(db, 'jobs'),
       where('status', '==', 'Open'),
-      orderBy('createdAt', 'desc'),
-      limit(6)
+      limit(20) // Get a few more to allow local sorting
     );
   }, [db]);
-  const { data: openJobs, isLoading: isLoadingOpenJobs } = useCollection(openJobsQuery);
+  const { data: openJobsRaw, isLoading: isLoadingOpenJobs } = useCollection(openJobsQuery);
+
+  // Local sorting for consistency without indexes
+  const myJobs = React.useMemo(() => {
+    if (!myJobsRaw) return [];
+    return [...myJobsRaw].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [myJobsRaw]);
+
+  const openJobs = React.useMemo(() => {
+    if (!openJobsRaw) return [];
+    return [...openJobsRaw]
+      .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      })
+      .slice(0, 6); // Limit to top 6 after sorting
+  }, [openJobsRaw]);
 
   const isLoading = isUserLoading || isProfileLoading;
 
@@ -101,10 +121,10 @@ export default function WorkerDashboardPage() {
     );
   }
 
-  const activeJobs = myJobs?.filter(j => j.status === 'In Progress') || [];
-  const completedJobs = myJobs?.filter(j => j.status === 'Completed') || [];
+  const activeJobs = myJobs.filter(j => j.status === 'In Progress');
+  const completedJobs = myJobs.filter(j => j.status === 'Completed');
   const totalEarnings = completedJobs.reduce((acc, j) => acc + (j.workerPayout || 0), 0);
-  const successRate = myJobs?.length ? Math.round((completedJobs.length / myJobs.length) * 100) : 0;
+  const successRate = myJobs.length ? Math.round((completedJobs.length / myJobs.length) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
@@ -216,7 +236,7 @@ export default function WorkerDashboardPage() {
               <CardTitle className="text-xl font-bold">New Opportunities</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black">{openJobs?.length || 0}</div>
+              <div className="text-3xl font-black">{openJobs.length}</div>
               <p className="text-[10px] mt-2 text-primary-foreground/80">Available in the hive today</p>
             </CardContent>
           </Card>
@@ -323,7 +343,7 @@ export default function WorkerDashboardPage() {
             <div className="space-y-4">
               {isLoadingOpenJobs ? (
                 <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" /></div>
-              ) : openJobs && openJobs.length > 0 ? (
+              ) : openJobs.length > 0 ? (
                 openJobs.map(job => (
                   <Card key={job.id} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden">
                     <Link href={`/jobs/${job.id}`}>
