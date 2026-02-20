@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -219,20 +220,21 @@ export default function LandingPage() {
                   <span>Verified Pros</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-primary" />
+                   <ShieldCheck className="w-5 h-5 text-primary" />
                   <span>Secure Escrow</span>
                 </div>
               </div>
             </div>
             <div className="relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl aspect-[4/3]">
+              <div className="relative z-10 rounded-2xl shadow-2xl overflow-hidden bg-slate-50 flex items-center justify-center min-h-[400px]">
                 {heroImage && (
                   <Image 
                     src={heroImage.imageUrl} 
                     alt={heroImage.description} 
                     fill 
-                    className="object-cover"
+                    className="object-contain"
                     data-ai-hint={heroImage.imageHint}
+                    priority
                   />
                 )}
               </div>

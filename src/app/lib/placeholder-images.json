@@ -1,3 +1,4 @@
+
 {
   "placeholderImages": [
     {
@@ -9,19 +10,19 @@
     {
       "id": "brand-logo",
       "description": "Zero Worries Logo",
-      "imageUrl": "https://i.postimg.cc/Hk6zT4Z6/1000751524-(2).jpg",
+      "imageUrl": "https://picsum.photos/seed/zero_worries_logo/200/200",
       "imageHint": "brand logo"
     },
     {
       "id": "trust-security",
       "description": "Secure digital payment illustration",
-      "imageUrl": "https://picsum.photos/seed/workbee_trust/600/400",
+      "imageUrl": "https://images.unsplash.com/photo-1758519291442-6a34815b0ae3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzZWN1cmUlMjBwYXltZW50fGVufDB8fHx8MTc3MTU3NDA0OXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "secure payment"
     },
     {
       "id": "community",
       "description": "People shaking hands in a local community",
-      "imageUrl": "https://picsum.photos/seed/workbee_community/600/400",
+      "imageUrl": "https://images.unsplash.com/photo-1771340589641-a616eb7ccbbf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb21tdW5pdHklMjBoYW5kc2hha2V8ZW58MHx8fHwxNzcxNTc0MDQ5fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "community handshake"
     }
   ]
