@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Briefcase, Eye, Clock, AlertCircle, Search } from 'lucide-react';
 import Link from 'next/link';
@@ -12,6 +12,7 @@ import Link from 'next/link';
 /**
  * Public Job Feed.
  * Only shows 'Open' jobs to prevent noise from completed or active contracts.
+ * Uses client-side sorting to bypass Firestore index requirements.
  */
 export default function FindJobPage() {
   const db = useFirestore();
@@ -21,12 +22,21 @@ export default function FindJobPage() {
     // Only show jobs that are officially 'Open' and waiting for applicants
     return query(
       collection(db, 'jobs'), 
-      where('status', '==', 'Open'),
-      orderBy('createdAt', 'desc')
+      where('status', '==', 'Open')
     );
   }, [db]);
 
-  const { data: jobs, isLoading, error } = useCollection(jobsQuery);
+  const { data: jobsRaw, isLoading, error } = useCollection(jobsQuery);
+
+  // Client-side sort to ensure newest jobs appear first without requiring a composite index
+  const jobs = React.useMemo(() => {
+    if (!jobsRaw) return [];
+    return [...jobsRaw].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [jobsRaw]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -39,7 +49,7 @@ export default function FindJobPage() {
       
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black font-headline tracking-tight">Open Opportunities</h1>
+          <h1 className="text-4xl font-black font-headline tracking-tight text-slate-900">Open Opportunities</h1>
           <p className="text-muted-foreground mt-2">Browse the hive for new tasks and service requests.</p>
         </div>
         <div className="flex items-center gap-2 bg-white border px-4 py-2 rounded-xl shadow-sm">
@@ -56,15 +66,15 @@ export default function FindJobPage() {
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton key={i} className="h-48 w-full rounded-xl" />
           ))}
         </div>
       ) : jobs && jobs.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {jobs.map((job) => (
-            <Card key={job.id} className="hover:shadow-xl transition-all border-none shadow-md group overflow-hidden bg-white">
+            <Card key={job.id} className="hover:shadow-xl transition-all border-none shadow-md group overflow-hidden bg-white flex flex-col">
               <div className="h-1 bg-primary group-hover:bg-accent transition-colors" />
               <CardHeader className="flex flex-row items-start gap-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-110">
@@ -78,8 +88,8 @@ export default function FindJobPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <CardDescription className="line-clamp-3 text-sm leading-relaxed text-slate-600 h-15">
+              <CardContent className="flex-1">
+                <CardDescription className="line-clamp-3 text-sm leading-relaxed text-slate-600">
                   {job.description}
                 </CardDescription>
               </CardContent>

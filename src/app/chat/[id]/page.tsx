@@ -124,21 +124,32 @@ export default function ChatPage() {
   }, [db, chatId]);
   const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
 
-  // Price Proposals - fetching recent ones for this specific pairing
+  // Price Proposals - Fetching proposals involving these participants
   const proposalsQuery = useMemoFirebase(() => {
     if (!db || !jobId || !user || !otherUserId) return null;
     return query(
       collection(db, 'jobs', jobId, 'proposals'),
-      where('proposerId', 'in', [user.uid, otherUserId]),
-      orderBy('createdAt', 'desc'),
-      limit(5)
+      where('proposerId', 'in', [user.uid, otherUserId])
     );
   }, [db, jobId, user, otherUserId]);
-  const { data: proposals } = useCollection(proposalsQuery);
+  
+  const { data: proposalsRaw } = useCollection(proposalsQuery);
+
+  // Client-side sort and filter for proposals to bypass composite index requirements
+  const proposals = React.useMemo(() => {
+    if (!proposalsRaw) return [];
+    return [...proposalsRaw]
+      .filter(p => (p.proposerId === workerIdFromPath || p.recipientId === workerIdFromPath))
+      .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+  }, [proposalsRaw, workerIdFromPath]);
 
   // Active or most recent accepted proposal for this specific negotiation
-  const activeProposal = proposals?.find(p => p.status === 'Accepted' && (p.proposerId === workerIdFromPath || p.recipientId === workerIdFromPath)) 
-                        || proposals?.find(p => (p.status === 'Pending' || p.status === 'Countered') && (p.proposerId === workerIdFromPath || p.recipientId === workerIdFromPath));
+  const activeProposal = proposals?.find(p => p.status === 'Accepted') 
+                        || proposals?.find(p => (p.status === 'Pending' || p.status === 'Countered'));
 
   // Auto-scroll to bottom
   useEffect(() => {
