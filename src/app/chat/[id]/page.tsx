@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection, query, orderBy, limit, where } from 'firebase/firestore';
-import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -27,7 +26,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   ShieldCheck,
-  Zap
+  Zap,
+  UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -46,18 +46,25 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
- * Functional Chat Screen with Price Proposals and Post-Payment Contact Unlocking.
- * Enhanced to show accepted agreements clearly for both parties.
+ * Functional Chat Screen with Price Proposals and Hiring Workflow.
+ * Supports multiple parallel chats per job (chatId = jobId_workerId).
  */
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const jobId = params.id as string;
+  const chatId = params.id as string;
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
   const [messageText, setMessageText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Parse jobId and workerId from chatId (format: jobId_workerId)
+  const [jobId, workerIdFromPath] = React.useMemo(() => {
+    if (!chatId) return [null, null];
+    const parts = chatId.split('_');
+    return [parts[0], parts[1]];
+  }, [chatId]);
 
   // Proposal State
   const [proposalAmount, setProposalAmount] = useState('');
@@ -66,9 +73,9 @@ export default function ChatPage() {
 
   // Chat Room Metadata
   const chatRoomRef = useMemoFirebase(() => {
-    if (!db || !jobId) return null;
-    return doc(db, 'chatRooms', jobId);
-  }, [db, jobId]);
+    if (!db || !chatId) return null;
+    return doc(db, 'chatRooms', chatId);
+  }, [db, chatId]);
   const { data: chatRoom, isLoading: isLoadingRoom } = useDoc(chatRoomRef);
 
   // Job Data
@@ -80,9 +87,9 @@ export default function ChatPage() {
 
   // Determine who the "other user" is
   const otherUserId = React.useMemo(() => {
-    if (!job || !user) return null;
-    return user.uid === job.customerId ? job.selectedApplicantId : job.customerId;
-  }, [job, user]);
+    if (!job || !user || !workerIdFromPath) return null;
+    return user.uid === job.customerId ? workerIdFromPath : job.customerId;
+  }, [job, user, workerIdFromPath]);
 
   // Other User's Profile
   const otherUserRef = useMemoFirebase(() => {
@@ -107,13 +114,13 @@ export default function ChatPage() {
 
   // Messages
   const messagesQuery = useMemoFirebase(() => {
-    if (!db || !jobId) return null;
+    if (!db || !chatId) return null;
     return query(
-      collection(db, 'chatRooms', jobId, 'messages'),
+      collection(db, 'chatRooms', chatId, 'messages'),
       orderBy('createdAt', 'asc'),
       limit(100)
     );
-  }, [db, jobId]);
+  }, [db, chatId]);
   const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
 
   // Price Proposals - fetching recent one
@@ -121,14 +128,16 @@ export default function ChatPage() {
     if (!db || !jobId) return null;
     return query(
       collection(db, 'jobs', jobId, 'proposals'),
+      where('proposerId', 'in', [user?.uid, otherUserId].filter(Boolean)),
       orderBy('createdAt', 'desc'),
       limit(5)
     );
-  }, [db, jobId]);
+  }, [db, jobId, user, otherUserId]);
   const { data: proposals } = useCollection(proposalsQuery);
 
-  // Active or most recent accepted proposal
-  const activeProposal = proposals?.find(p => p.status === 'Accepted') || proposals?.find(p => p.status === 'Pending' || p.status === 'Countered');
+  // Active or most recent accepted proposal for this specific negotiation
+  const activeProposal = proposals?.find(p => p.status === 'Accepted' && (p.proposerId === workerIdFromPath || p.recipientId === workerIdFromPath)) 
+                        || proposals?.find(p => (p.status === 'Pending' || p.status === 'Countered') && (p.proposerId === workerIdFromPath || p.recipientId === workerIdFromPath));
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -140,7 +149,7 @@ export default function ChatPage() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     const text = messageText.trim();
-    if (!text || !user || !db || !jobId) return;
+    if (!text || !user || !db || !chatId) return;
 
     // Safety filter for contact details before payment
     if (!isPaid) {
@@ -155,7 +164,7 @@ export default function ChatPage() {
       }
     }
 
-    const messagesRef = collection(db, 'chatRooms', jobId, 'messages');
+    const messagesRef = collection(db, 'chatRooms', chatId, 'messages');
     addDocumentNonBlocking(messagesRef, {
       senderId: user.uid,
       text: text,
@@ -166,7 +175,7 @@ export default function ChatPage() {
   };
 
   const handleProposePrice = () => {
-    if (!user || !db || !jobId || !job || !proposalAmount) return;
+    if (!user || !db || !jobId || !job || !proposalAmount || !otherUserId) return;
     
     const proposalsRef = collection(db, 'jobs', jobId, 'proposals');
     
@@ -197,8 +206,20 @@ export default function ChatPage() {
 
     toast({ 
       title: `Price ${status}`, 
-      description: status === 'Accepted' ? 'Deal agreed! Proceed to payment.' : 'Price rejected.' 
+      description: status === 'Accepted' ? 'Deal agreed! You can now hire this worker.' : 'Price rejected.' 
     });
+  };
+
+  const handleHireWorker = () => {
+    if (!db || !jobRef || !job || !otherUserId || !otherUserProfile) return;
+    
+    updateDocumentNonBlocking(jobRef as any, {
+      selectedApplicantId: otherUserId,
+      selectedApplicantName: otherUserProfile.name,
+      status: 'In Progress',
+    });
+
+    toast({ title: "Worker Hired!", description: `${otherUserProfile.name} is now assigned to this job.` });
   };
 
   const handleCall = () => {
@@ -219,18 +240,29 @@ export default function ChatPage() {
     );
   }
 
-  if (!chatRoom || !user || !chatRoom.participants?.includes(user.uid)) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center p-4 text-center space-y-4">
-        <h2 className="text-xl font-bold">Privacy Restriction</h2>
-        <p className="text-muted-foreground">This secure channel is only for assigned participants.</p>
-        <Button onClick={() => router.push('/')}>Return Home</Button>
-      </div>
-    );
+  // If chat room doesn't exist yet, we can create it if the user is authorized
+  if (!chatRoom) {
+    const isAuthorized = user && job && (user.uid === job.customerId || user.uid === workerIdFromPath);
+    if (isAuthorized) {
+       setDocumentNonBlocking(chatRoomRef as any, {
+         jobId,
+         workerId: workerIdFromPath,
+         participants: [job.customerId, workerIdFromPath]
+       }, { merge: true });
+    } else {
+      return (
+        <div className="flex flex-col h-screen items-center justify-center p-4 text-center space-y-4">
+          <h2 className="text-xl font-bold">Privacy Restriction</h2>
+          <p className="text-muted-foreground">This secure channel is only for assigned participants.</p>
+          <Button onClick={() => router.push('/')}>Return Home</Button>
+        </div>
+      );
+    }
   }
 
   const otherParticipantName = otherUserProfile?.name || 'Partner';
-  const isCustomer = user.uid === job?.customerId;
+  const isCustomer = user?.uid === job?.customerId;
+  const isHired = job?.selectedApplicantId === workerIdFromPath;
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">
@@ -252,7 +284,12 @@ export default function ChatPage() {
                 {isPaid ? (
                   <span className="text-green-600 font-bold flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
                     <CheckCircle2 className="w-2.5 h-2.5" />
-                    Funds Secured
+                    Escrow Funded
+                  </span>
+                ) : isHired ? (
+                  <span className="flex items-center gap-1 font-bold text-amber-600">
+                    <ShieldCheck className="w-2.5 h-2.5" />
+                    Hired - Pending Funds
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 font-medium">
@@ -306,6 +343,13 @@ export default function ChatPage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+            )}
+            
+            {isCustomer && !isHired && (
+              <Button size="sm" onClick={handleHireWorker} className="h-8 font-bold gap-2 bg-green-600 hover:bg-green-700">
+                <UserCheck className="w-4 h-4" />
+                Hire Worker
+              </Button>
             )}
           </div>
         </div>
@@ -383,11 +427,11 @@ export default function ChatPage() {
                       <p className="text-xs text-muted-foreground italic line-clamp-2">"{activeProposal.description}"</p>
                     )}
                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
-                      Proposed by {activeProposal.proposerId === user.uid ? 'you' : otherParticipantName}
+                      Proposed by {activeProposal.proposerId === user?.uid ? 'you' : otherParticipantName}
                     </p>
                   </div>
                   
-                  {activeProposal.status === 'Accepted' && !isPaid && isCustomer && (
+                  {activeProposal.status === 'Accepted' && !isPaid && isCustomer && isHired && (
                     <Button asChild size="sm" className="bg-accent hover:bg-accent/90 shadow-lg shadow-accent/20 font-black h-12 px-6">
                       <Link href={`/payments/${jobId}`} className="gap-2">
                         <ShieldCheck className="w-4 h-4" />
@@ -395,8 +439,14 @@ export default function ChatPage() {
                       </Link>
                     </Button>
                   )}
+
+                  {activeProposal.status === 'Accepted' && !isHired && isCustomer && (
+                    <Button onClick={handleHireWorker} size="sm" className="bg-green-600 hover:bg-green-700 font-black h-12 px-6">
+                       Hire Now
+                    </Button>
+                  )}
                </CardContent>
-               {activeProposal.recipientId === user.uid && activeProposal.status === 'Pending' && (
+               {activeProposal.recipientId === user?.uid && activeProposal.status === 'Pending' && (
                  <CardFooter className="bg-white p-2 flex gap-2 border-t">
                     <Button variant="outline" size="sm" className="flex-1 h-10 font-bold text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleRespondToProposal(activeProposal.id, 'Accepted')}>
                       <Check className="w-4 h-4 mr-2" /> ACCEPT DEAL
@@ -409,7 +459,7 @@ export default function ChatPage() {
             </Card>
           )}
 
-          {activeProposal?.status === 'Accepted' && !isPaid && (
+          {activeProposal?.status === 'Accepted' && isHired && !isPaid && (
             <Alert className="mb-4 bg-blue-50 border-blue-200 shadow-sm animate-pulse">
               <Zap className="h-4 w-4 text-blue-600" />
               <AlertTitle className="text-blue-800 text-xs font-black uppercase tracking-tight">Price Agreed!</AlertTitle>
@@ -419,6 +469,16 @@ export default function ChatPage() {
                   : "Waiting for the customer to fund the escrow. Full contact details will unlock automatically."}
               </AlertDescription>
             </Alert>
+          )}
+
+          {!isHired && isCustomer && (
+             <Alert className="mb-4 bg-amber-50 border-amber-200 shadow-sm">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-800 text-xs font-black uppercase tracking-tight">Hiring Required</AlertTitle>
+                <AlertDescription className="text-amber-700 text-[11px] leading-tight">
+                  You are chatting with this applicant. Click "Hire Worker" once you are ready to officially assign them to the job.
+                </AlertDescription>
+             </Alert>
           )}
 
           <div className="space-y-4">
@@ -432,12 +492,12 @@ export default function ChatPage() {
             {messages?.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex flex-col ${msg.senderId === user.uid ? 'items-end' : 'items-start'}`}
+                className={`flex flex-col ${msg.senderId === user?.uid ? 'items-end' : 'items-start'}`}
               >
                 <div
                   className={cn(
                     "max-w-[85%] px-4 py-2.5 rounded-2xl text-[13px] shadow-sm leading-relaxed",
-                    msg.senderId === user.uid
+                    msg.senderId === user?.uid
                       ? 'bg-primary text-primary-foreground rounded-tr-none'
                       : 'bg-white border text-foreground rounded-tl-none'
                   )}

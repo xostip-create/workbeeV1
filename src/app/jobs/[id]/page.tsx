@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,7 +6,7 @@ import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@
 import { doc, collection, query, orderBy, where, limit } from 'firebase/firestore';
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -29,7 +28,9 @@ import {
   AlertCircle,
   PlayCircle,
   Star,
-  Banknote
+  Banknote,
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -73,6 +74,19 @@ export default function JobDetailsPage() {
   }, [db, jobId]);
 
   const { data: applications, isLoading: isLoadingApps } = useCollection(applicationsQuery);
+
+  // Check for successful payment
+  const paymentsQuery = useMemoFirebase(() => {
+    if (!db || !jobId) return null;
+    return query(
+      collection(db, 'payments'),
+      where('jobId', '==', jobId),
+      where('status', '==', 'Paid'),
+      limit(1)
+    );
+  }, [db, jobId]);
+  const { data: payments } = useCollection(paymentsQuery);
+  const isPaid = !!(payments && payments.length > 0);
 
   // Query for the accepted proposal to calculate commission
   const acceptedProposalQuery = useMemoFirebase(() => {
@@ -177,16 +191,28 @@ export default function JobDetailsPage() {
       selectedApplicantName: applicantName,
       status: 'In Progress',
     });
-    const chatRoomRef = doc(db, 'chatRooms', jobId);
+    
+    // Ensure chat room exists for this pairing
+    const chatId = `${jobId}_${applicantId}`;
+    const chatRoomRef = doc(db, 'chatRooms', chatId);
     setDocumentNonBlocking(chatRoomRef, {
       jobId: jobId,
+      workerId: applicantId,
       participants: [job.customerId, applicantId]
     }, { merge: true });
-    toast({ title: "Worker Selected!", description: `${applicantName} has been assigned.` });
+    
+    toast({ title: "Worker Selected!", description: `${applicantName} has been hired.` });
   };
 
   const handleMarkAsCompleted = () => {
-    if (!jobDocRef) return;
+    if (!jobDocRef || !isPaid) {
+      toast({
+        variant: "destructive",
+        title: "Payment Required",
+        description: "You cannot mark a job as completed until it has been funded."
+      });
+      return;
+    }
     
     // Calculate commission (10%) and payout
     let totalPrice = 0;
@@ -206,7 +232,7 @@ export default function JobDetailsPage() {
       workerPayout
     });
     
-    toast({ title: "Job Completed", description: "Great work! This job has been marked as finished." });
+    toast({ title: "Job Completed", description: "The hive thanks you! Funds will be released." });
   };
 
   const handleSubmitReview = (e: React.FormEvent) => {
@@ -386,18 +412,29 @@ export default function JobDetailsPage() {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button asChild variant="outline" className={isCompleted ? "border-blue-200 text-blue-700 hover:bg-blue-100" : "border-green-200 text-green-700 hover:bg-green-100"}>
-                      <Link href={`/chat/${jobId}`}>
+                      <Link href={`/chat/${jobId}_${job.selectedApplicantId}`}>
                         <MessageSquare className="w-4 h-4 mr-2" />
                         Chat
                       </Link>
                     </Button>
                     {isOwner && isInProgress && (
-                      <Button onClick={handleMarkAsCompleted} className="bg-blue-600 hover:bg-blue-700">
-                        Mark Completed
+                      <Button 
+                        onClick={handleMarkAsCompleted} 
+                        className={isPaid ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-300 opacity-50 cursor-not-allowed"}
+                        disabled={!isPaid}
+                      >
+                        {isPaid ? 'Mark Completed' : 'Waiting for Payment'}
                       </Button>
                     )}
                   </div>
                 </div>
+
+                {!isPaid && isInProgress && isOwner && (
+                   <AlertCircle className="w-full text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-100 flex items-center gap-2">
+                     <Lock className="w-3 h-3" />
+                     Reminder: You must fund the escrow via chat before you can mark this work as finished.
+                   </AlertCircle>
+                )}
 
                 {isCompleted && job.totalPrice !== undefined && (
                   <Card className="border-blue-200 bg-blue-50/30 overflow-hidden shadow-none">
@@ -425,7 +462,7 @@ export default function JobDetailsPage() {
                         <span className="font-black text-green-600 text-xl">₦{(job.workerPayout || 0).toLocaleString()}</span>
                       </div>
                       <p className="text-[10px] text-blue-600 italic">
-                        The commission is used to maintain the WorkBee hive and ensure platform safety.
+                        Escrow successfully released. The worker has been credited.
                       </p>
                     </CardContent>
                   </Card>
@@ -504,7 +541,7 @@ export default function JobDetailsPage() {
               ) : applications && applications.length > 0 ? (
                 <div className="divide-y">
                   {applications.map((app) => (
-                    <div key={app.id} className="py-4 flex items-center justify-between">
+                    <div key={app.id} className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold bg-primary/10 text-primary">
                           {app.applicantName.charAt(0)}
@@ -514,12 +551,27 @@ export default function JobDetailsPage() {
                           <p className="text-xs text-muted-foreground">Applied {new Date(app.appliedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <Button 
-                        variant="secondary" size="sm" className="bg-green-500 text-white hover:bg-green-600"
-                        onClick={() => handleSelectWorker(app.applicantId, app.applicantName)}
-                      >
-                        Select Worker
-                      </Button>
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <Button 
+                          asChild
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 sm:flex-none h-9 gap-2"
+                        >
+                          <Link href={`/chat/${jobId}_${app.applicantId}`}>
+                            <MessageSquare className="w-4 h-4" />
+                            Negotiate
+                          </Link>
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="flex-1 sm:flex-none h-9 bg-green-500 text-white hover:bg-green-600"
+                          onClick={() => handleSelectWorker(app.applicantId, app.applicantName)}
+                        >
+                          Hire Worker
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
