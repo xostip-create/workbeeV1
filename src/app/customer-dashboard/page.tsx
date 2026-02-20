@@ -28,9 +28,11 @@ import {
   Home
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function CustomerDashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -62,6 +64,7 @@ export default function CustomerDashboardPage() {
   }, [myJobsRaw]);
 
   const isLoading = isUserLoading || isProfileLoading;
+  const brandLogo = PlaceHolderImages.find(img => img.id === 'brand-logo');
 
   if (isLoading) {
     return (
@@ -99,8 +102,14 @@ export default function CustomerDashboardPage() {
       <header className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <span className="font-bold text-primary">Z</span>
+            <div className="w-9 h-9 relative overflow-hidden rounded-lg flex items-center justify-center group-hover:opacity-80 transition-opacity">
+              {brandLogo ? (
+                <Image src={brandLogo.imageUrl} alt="Zero Worries" fill className="object-cover" />
+              ) : (
+                <div className="w-full h-full bg-primary flex items-center justify-center text-white">
+                  <span className="font-bold">Z</span>
+                </div>
+              )}
             </div>
             <div>
               <h1 className="text-lg font-bold font-headline leading-none hidden sm:block">Customer Hub</h1>

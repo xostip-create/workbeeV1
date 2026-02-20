@@ -1,11 +1,16 @@
-
 {
   "placeholderImages": [
     {
       "id": "hero-main",
-      "description": "Happy professional worker with tools",
-      "imageUrl": "https://picsum.photos/seed/workbee_hero/1200/800",
+      "description": "Zero Worries Hero",
+      "imageUrl": "https://i.postimg.cc/Hk6zT4Z6/1000751524-(2).jpg",
       "imageHint": "professional repairman"
+    },
+    {
+      "id": "brand-logo",
+      "description": "Zero Worries Logo",
+      "imageUrl": "https://i.postimg.cc/Hk6zT4Z6/1000751524-(2).jpg",
+      "imageHint": "brand logo"
     },
     {
       "id": "trust-security",

@@ -11,7 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -24,6 +26,7 @@ export default function SignupPage() {
   const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const brandLogo = PlaceHolderImages.find(img => img.id === 'brand-logo');
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,8 +77,14 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white">
-              <span className="font-bold">Z</span>
+            <div className="w-10 h-10 relative overflow-hidden rounded-lg">
+              {brandLogo ? (
+                <Image src={brandLogo.imageUrl} alt="Zero Worries" fill className="object-cover" />
+              ) : (
+                <div className="w-full h-full bg-primary rounded-full flex items-center justify-center text-white">
+                  <span className="font-bold">Z</span>
+                </div>
+              )}
             </div>
             <CardTitle className="text-2xl font-bold">Join Zero Worries</CardTitle>
           </div>
