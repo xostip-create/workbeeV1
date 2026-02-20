@@ -80,12 +80,6 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/workers" className="text-sm font-medium hover:text-primary transition-colors">Find Workers</Link>
             <Link href="/jobs" className="text-sm font-medium hover:text-primary transition-colors">Browse Jobs</Link>
-            {user && (
-              <Link href="/messages" className="text-sm font-bold text-primary flex items-center gap-1.5 hover:underline">
-                <MessageSquare className="w-4 h-4" />
-                Messages
-              </Link>
-            )}
             <Link href="/shops" className="text-sm font-medium hover:text-primary transition-colors">Local Shops</Link>
           </nav>
 
