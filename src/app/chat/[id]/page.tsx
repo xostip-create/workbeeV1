@@ -28,7 +28,8 @@ import {
   ShieldCheck,
   Zap,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -47,8 +48,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
- * Functional Chat Screen with Price Proposals and Hiring Workflow.
- * Supports multiple parallel chats per job (chatId = jobId_workerId).
+ * Functional Chat Screen with Pay-Before-Hire Workflow.
+ * Customers must fund escrow before they can officially hire.
  */
 export default function ChatPage() {
   const params = useParams();
@@ -60,46 +61,39 @@ export default function ChatPage() {
   const [messageText, setMessageText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Parse jobId and workerId from chatId (format: jobId_workerId)
   const [jobId, workerIdFromPath] = React.useMemo(() => {
     if (!chatId) return [null, null];
     const parts = chatId.split('_');
     return [parts[0], parts[1]];
   }, [chatId]);
 
-  // Proposal State
   const [proposalAmount, setProposalAmount] = useState('');
   const [proposalDesc, setProposalDesc] = useState('');
   const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
 
-  // Chat Room Metadata
   const chatRoomRef = useMemoFirebase(() => {
     if (!db || !chatId) return null;
     return doc(db, 'chatRooms', chatId);
   }, [db, chatId]);
   const { data: chatRoom, isLoading: isLoadingRoom } = useDoc(chatRoomRef);
 
-  // Job Data
   const jobRef = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return doc(db, 'jobs', jobId);
   }, [db, jobId]);
   const { data: job } = useDoc(jobRef);
 
-  // Determine who the "other user" is
   const otherUserId = React.useMemo(() => {
     if (!job || !user || !workerIdFromPath) return null;
     return user.uid === job.customerId ? workerIdFromPath : job.customerId;
   }, [job, user, workerIdFromPath]);
 
-  // Other User's Profile
   const otherUserRef = useMemoFirebase(() => {
     if (!db || !otherUserId) return null;
     return doc(db, 'users', otherUserId);
   }, [db, otherUserId]);
   const { data: otherUserProfile } = useDoc(otherUserRef);
 
-  // Check for successful payment record in Firestore
   const paymentsQuery = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return query(
@@ -113,7 +107,6 @@ export default function ChatPage() {
 
   const isPaid = !!(payments && payments.length > 0);
 
-  // Messages
   const messagesQuery = useMemoFirebase(() => {
     if (!db || !chatId) return null;
     return query(
@@ -124,7 +117,6 @@ export default function ChatPage() {
   }, [db, chatId]);
   const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
 
-  // Price Proposals - Fetching proposals involving these participants
   const proposalsQuery = useMemoFirebase(() => {
     if (!db || !jobId || !user || !otherUserId) return null;
     return query(
@@ -135,7 +127,6 @@ export default function ChatPage() {
   
   const { data: proposalsRaw } = useCollection(proposalsQuery);
 
-  // Client-side sort and filter for proposals to bypass composite index requirements
   const proposals = React.useMemo(() => {
     if (!proposalsRaw) return [];
     return [...proposalsRaw]
@@ -147,11 +138,9 @@ export default function ChatPage() {
       });
   }, [proposalsRaw, workerIdFromPath]);
 
-  // Active or most recent accepted proposal for this specific negotiation
   const activeProposal = proposals?.find(p => p.status === 'Accepted') 
                         || proposals?.find(p => (p.status === 'Pending' || p.status === 'Countered'));
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -163,7 +152,6 @@ export default function ChatPage() {
     const text = messageText.trim();
     if (!text || !user || !db || !chatId) return;
 
-    // Safety filter for contact details before payment
     if (!isPaid) {
       const contactRegex = /(\d{7,15}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
       if (contactRegex.test(text.replace(/\s/g, ''))) {
@@ -218,11 +206,20 @@ export default function ChatPage() {
 
     toast({ 
       title: `Price ${status}`, 
-      description: status === 'Accepted' ? 'Deal agreed! You can now hire this worker.' : 'Price rejected.' 
+      description: status === 'Accepted' ? 'Deal agreed! Please fund the job to officially hire.' : 'Price rejected.' 
     });
   };
 
   const handleHireWorker = () => {
+    if (!isPaid) {
+      toast({
+        variant: "destructive",
+        title: "Funding Required",
+        description: "You must pay the agreed price before officially hiring the worker."
+      });
+      return;
+    }
+
     if (!db || !jobRef || !job || !otherUserId || !otherUserProfile) return;
     
     updateDocumentNonBlocking(jobRef as any, {
@@ -252,7 +249,6 @@ export default function ChatPage() {
     );
   }
 
-  // If chat room doesn't exist yet, we can create it if the user is authorized
   if (!chatRoom) {
     const isAuthorized = user && job && (user.uid === job.customerId || user.uid === workerIdFromPath);
     if (isAuthorized) {
@@ -359,16 +355,15 @@ export default function ChatPage() {
               </Dialog>
             )}
             
-            {isCustomer && !isHired && (
+            {isCustomer && !isHired && isPaid && (
               <Button size="sm" onClick={handleHireWorker} className="h-8 font-black gap-2 bg-green-600 hover:bg-green-700 shadow-md shadow-green-100">
                 <UserCheck className="w-4 h-4" />
-                HIRE NOW
+                OFFICIALLY HIRE
               </Button>
             )}
           </div>
         </div>
         
-        {/* Contact Strip */}
         <div className="px-4 py-1.5 border-t flex items-center gap-4 bg-slate-50/50">
           <Button 
             variant="ghost" 
@@ -394,7 +389,6 @@ export default function ChatPage() {
 
       <ScrollArea className="flex-1 p-4">
         <div className="flex flex-col gap-4 max-w-2xl mx-auto pb-10">
-          {/* Active / Accepted Proposal Card */}
           {activeProposal && (
             <Card className={cn(
               "border-2 shadow-xl mb-6 overflow-hidden transition-all",
@@ -445,7 +439,7 @@ export default function ChatPage() {
                     </p>
                   </div>
                   
-                  {activeProposal.status === 'Accepted' && !isPaid && isCustomer && isHired && (
+                  {activeProposal.status === 'Accepted' && !isPaid && isCustomer && (
                     <Button asChild size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 font-black h-14 px-10 rounded-2xl animate-bounce">
                       <Link href={`/payments/${jobId}`} className="gap-2">
                         <ShieldCheck className="w-5 h-5" />
@@ -454,7 +448,7 @@ export default function ChatPage() {
                     </Button>
                   )}
 
-                  {activeProposal.status === 'Accepted' && !isHired && isCustomer && (
+                  {activeProposal.status === 'Accepted' && isPaid && !isHired && isCustomer && (
                     <Button onClick={handleHireWorker} size="lg" className="w-full md:w-auto bg-green-600 hover:bg-green-700 font-black h-14 px-10 rounded-2xl">
                        OFFICIALLY HIRE
                     </Button>
@@ -473,24 +467,34 @@ export default function ChatPage() {
             </Card>
           )}
 
-          {activeProposal?.status === 'Accepted' && isHired && !isPaid && (
+          {activeProposal?.status === 'Accepted' && !isPaid && (
             <Alert className="mb-6 bg-blue-50 border-blue-200 shadow-md">
-              <Zap className="h-5 w-5 text-blue-600" />
-              <AlertTitle className="text-blue-900 text-sm font-black uppercase tracking-tight">Hiring Complete - Funding Required</AlertTitle>
+              <Lock className="h-5 w-5 text-blue-600" />
+              <AlertTitle className="text-blue-900 text-sm font-black uppercase tracking-tight">Funding Required to Hire</AlertTitle>
               <AlertDescription className="text-blue-800 text-xs font-medium leading-tight mt-1">
                 {isCustomer 
-                  ? "Final step: Deposit the funds into escrow. This unlocks contact details and confirms the task for the provider."
-                  : "Waiting for the customer to deposit funds. Your dashboard will update and contact details will unlock automatically."}
+                  ? "As per Hive safety rules, you must fund the escrow before you can officially hire this worker. This confirms the task and protects both parties."
+                  : "Waiting for the customer to deposit the agreed funds. Once paid, they will be able to officially hire you and contact details will unlock."}
               </AlertDescription>
             </Alert>
           )}
 
-          {!isHired && isCustomer && (
+          {activeProposal?.status === 'Accepted' && isPaid && !isHired && isCustomer && (
+             <Alert className="mb-6 bg-green-50 border-green-200 shadow-md">
+               <UserCheck className="h-5 w-5 text-green-600" />
+               <AlertTitle className="text-green-900 text-sm font-black uppercase tracking-tight">Payment Confirmed!</AlertTitle>
+               <AlertDescription className="text-green-800 text-xs font-medium leading-tight mt-1">
+                 Funds are now secured in escrow. Click <strong>"OFFICIALLY HIRE"</strong> above to assign the worker and share contact details.
+               </AlertDescription>
+             </Alert>
+          )}
+
+          {!isHired && isCustomer && !activeProposal && (
              <Alert className="mb-6 bg-amber-50 border-amber-200 shadow-sm border-l-4 border-l-amber-500">
                 <AlertCircle className="h-5 w-5 text-amber-600" />
                 <AlertTitle className="text-amber-900 text-sm font-black uppercase tracking-tight">Agreement Phase</AlertTitle>
                 <AlertDescription className="text-amber-800 text-xs font-medium leading-tight mt-1">
-                  Once you agree on terms, click <strong>"OFFICIALLY HIRE"</strong> to assign this worker. You can negotiate with multiple applicants simultaneously.
+                  Discuss terms and finalize a price. Once agreed, you will need to fund the job before officially hiring.
                 </AlertDescription>
              </Alert>
           )}

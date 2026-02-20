@@ -76,7 +76,6 @@ export default function JobDetailsPage() {
 
   const { data: applications, isLoading: isLoadingApps } = useCollection(applicationsQuery);
 
-  // Check for successful payment record in Firestore
   const paymentsQuery = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return query(
@@ -89,7 +88,6 @@ export default function JobDetailsPage() {
   const { data: payments } = useCollection(paymentsQuery);
   const isPaid = !!(payments && payments.length > 0);
 
-  // Query for the accepted proposal to calculate final amounts
   const acceptedProposalQuery = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return query(
@@ -107,7 +105,6 @@ export default function JobDetailsPage() {
   const [editedDescription, setEditedDescription] = useState('');
   const [isApplying, setIsApplying] = useState(false);
 
-  // Review state
   const [rating, setRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -185,28 +182,7 @@ export default function JobDetailsPage() {
     }).catch(() => setIsApplying(false));
   };
 
-  const handleSelectWorker = (applicantId: string, applicantName: string) => {
-    if (!jobDocRef || !db) return;
-    updateDocumentNonBlocking(jobDocRef, {
-      selectedApplicantId: applicantId,
-      selectedApplicantName: applicantName,
-      status: 'In Progress',
-    });
-    
-    // Ensure chat room exists for this pairing
-    const chatId = `${jobId}_${applicantId}`;
-    const chatRoomRef = doc(db, 'chatRooms', chatId);
-    setDocumentNonBlocking(chatRoomRef, {
-      jobId: jobId,
-      workerId: applicantId,
-      participants: [job.customerId, applicantId]
-    }, { merge: true });
-    
-    toast({ title: "Worker Selected!", description: `${applicantName} has been hired.` });
-  };
-
   const handleMarkAsCompleted = () => {
-    // CRITICAL: Double check payment record before allowing completion
     if (!jobDocRef || !isPaid) {
       toast({
         variant: "destructive",
@@ -216,7 +192,6 @@ export default function JobDetailsPage() {
       return;
     }
     
-    // Finalize financial calculations (10% platform commission)
     let totalPrice = 0;
     let commissionAmount = 0;
     let workerPayout = 0;
@@ -226,7 +201,6 @@ export default function JobDetailsPage() {
       commissionAmount = totalPrice * 0.10;
       workerPayout = totalPrice - commissionAmount;
     } else {
-      // Fallback if no proposal was formally accepted (unlikely but safe)
       totalPrice = job.totalPrice || 0;
       commissionAmount = totalPrice * 0.10;
       workerPayout = totalPrice - commissionAmount;
@@ -266,9 +240,9 @@ export default function JobDetailsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Button asChild variant="ghost" className="mb-6 gap-2">
-        <Link href="/jobs">
+        <Link href={user && userProfile?.accountType === 'Worker' ? '/worker-dashboard' : '/customer-dashboard'}>
           <ArrowLeft className="w-4 h-4" />
-          Back to Jobs
+          Back
         </Link>
       </Button>
       
@@ -476,7 +450,6 @@ export default function JobDetailsPage() {
               </div>
             )}
 
-            {/* Review Section */}
             {isCompleted && isOwner && !job.isReviewed && (
               <div className="pt-10 mt-10 border-t border-dashed">
                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
@@ -567,17 +540,8 @@ export default function JobDetailsPage() {
                         >
                           <Link href={`/chat/${jobId}_${app.applicantId}`}>
                             <MessageSquare className="w-4 h-4 mr-2" />
-                            Negotiate
+                            Negotiate & Pay
                           </Link>
-                        </Button>
-                        <Button 
-                          variant="secondary" 
-                          size="lg" 
-                          className="flex-1 sm:flex-none h-12 font-black px-6 bg-green-600 text-white hover:bg-green-700 shadow-md shadow-green-100"
-                          onClick={() => handleSelectWorker(app.applicantId, app.applicantName)}
-                        >
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          Hire Now
                         </Button>
                       </div>
                     </div>
