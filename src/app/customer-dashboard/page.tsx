@@ -32,23 +32,17 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
-/**
- * Dedicated Dashboard for Customers.
- * Provides a clean overview of posted jobs, active services, and total spend.
- */
 export default function CustomerDashboardPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const router = useRouter();
 
-  // Fetch customer profile
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
   }, [db, user]);
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // Fetch jobs posted by this customer
   const myJobsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -58,7 +52,6 @@ export default function CustomerDashboardPage() {
   }, [db, user]);
   const { data: myJobsRaw, isLoading: isLoadingMyJobs } = useCollection(myJobsQuery);
 
-  // Sort jobs locally by createdAt descending
   const myJobs = React.useMemo(() => {
     if (!myJobsRaw) return [];
     return [...myJobsRaw].sort((a, b) => {
@@ -78,7 +71,6 @@ export default function CustomerDashboardPage() {
     );
   }
 
-  // Auth Guard - only allow customers
   if (!user || profile?.accountType !== 'Customer') {
     return (
       <div className="flex flex-col h-screen items-center justify-center p-4 text-center bg-slate-50">
@@ -104,17 +96,16 @@ export default function CustomerDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
-      {/* Header */}
       <header className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <LayoutDashboard className="w-5 h-5 text-primary" />
+              <span className="font-bold text-primary">Z</span>
             </div>
             <div>
               <h1 className="text-lg font-bold font-headline leading-none hidden sm:block">Customer Hub</h1>
-              <h1 className="text-lg font-bold font-headline leading-none sm:hidden">Hive</h1>
-              <p className="text-[10px] text-primary font-bold uppercase mt-0.5 tracking-tight group-hover:underline">WorkBee Home</p>
+              <h1 className="text-lg font-bold font-headline leading-none sm:hidden">Zero</h1>
+              <p className="text-[10px] text-primary font-bold uppercase mt-0.5 tracking-tight group-hover:underline">Zero Worries Home</p>
             </div>
           </Link>
           
@@ -134,7 +125,6 @@ export default function CustomerDashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Welcome */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-1">
             <h2 className="text-3xl font-black font-headline tracking-tight text-slate-900">Hello, {profile.name}!</h2>
@@ -156,7 +146,6 @@ export default function CustomerDashboardPage() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -208,9 +197,7 @@ export default function CustomerDashboardPage() {
           </Card>
         </div>
 
-        {/* Job Management Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Feed */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold font-headline text-slate-900 flex items-center gap-2">
@@ -279,7 +266,6 @@ export default function CustomerDashboardPage() {
             )}
           </div>
 
-          {/* Quick Actions / Inbox */}
           <div className="space-y-6">
             <h3 className="text-lg font-bold font-headline text-slate-900">Inbox</h3>
             

@@ -47,10 +47,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-/**
- * Functional Chat Screen with Pay-Before-Hire Workflow.
- * Customers must fund escrow before they can officially hire.
- */
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
@@ -473,7 +469,7 @@ export default function ChatPage() {
               <AlertTitle className="text-blue-900 text-sm font-black uppercase tracking-tight">Funding Required to Hire</AlertTitle>
               <AlertDescription className="text-blue-800 text-xs font-medium leading-tight mt-1">
                 {isCustomer 
-                  ? "As per Hive safety rules, you must fund the escrow before you can officially hire this worker. This confirms the task and protects both parties."
+                  ? "As per Zero Worries safety rules, you must fund the escrow before you can officially hire this worker. This confirms the task and protects both parties."
                   : "Waiting for the customer to deposit the agreed funds. Once paid, they will be able to officially hire you and contact details will unlock."}
               </AlertDescription>
             </Alert>

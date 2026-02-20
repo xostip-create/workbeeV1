@@ -33,24 +33,22 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Update basic profile
       await updateProfile(user, { displayName: name });
 
-      // Save to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         id: user.uid,
         name: name,
         email: email,
         accountType: accountType,
-        photoUrl: '', // Initialize empty photo URL
-        isAvailable: true, // Default to available for workers
-        skills: [], // Initialize empty skills array
+        photoUrl: '', 
+        isAvailable: true, 
+        skills: [], 
         createdAt: new Date().toISOString(),
       });
 
       toast({
         title: 'Account created!',
-        description: `Welcome to WorkBee, ${name}.`,
+        description: `Welcome to Zero Worries, ${name}.`,
       });
 
       if (accountType === 'Worker') {
@@ -77,12 +75,12 @@ export default function SignupPage() {
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white">
-              <span className="font-bold">W</span>
+              <span className="font-bold">Z</span>
             </div>
-            <CardTitle className="text-2xl font-bold">Join the Hive</CardTitle>
+            <CardTitle className="text-2xl font-bold">Join Zero Worries</CardTitle>
           </div>
           <CardDescription>
-            Create an account to start using WorkBee
+            Create an account to start your journey with complete peace of mind.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>

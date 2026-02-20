@@ -32,24 +32,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 
-/**
- * Enhanced Dashboard for Workers.
- * Provides a professional overview of active contracts, earnings, and new opportunities.
- * Uses client-side sorting to bypass Firestore index requirements.
- */
 export default function WorkerDashboardPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const router = useRouter();
 
-  // Fetch worker profile
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
   }, [db, user]);
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  // Fetch jobs where the worker is assigned
   const myJobsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -59,7 +52,6 @@ export default function WorkerDashboardPage() {
   }, [db, user]);
   const { data: myJobsRaw, isLoading: isLoadingMyJobs } = useCollection(myJobsQuery);
 
-  // Fetch open jobs (Available Opportunities)
   const openJobsQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(
@@ -70,7 +62,6 @@ export default function WorkerDashboardPage() {
   }, [db]);
   const { data: openJobsRaw, isLoading: isLoadingOpenJobs } = useCollection(openJobsQuery);
 
-  // Local sorting for consistency without indexes
   const myJobs = React.useMemo(() => {
     if (!myJobsRaw) return [];
     return [...myJobsRaw].sort((a, b) => {
@@ -101,7 +92,6 @@ export default function WorkerDashboardPage() {
     );
   }
 
-  // Auth Guard
   if (!user || profile?.accountType !== 'Worker') {
     return (
       <div className="flex flex-col h-screen items-center justify-center p-4 text-center bg-slate-50">
@@ -127,17 +117,16 @@ export default function WorkerDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
-      {/* Dynamic Header */}
       <header className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <LayoutDashboard className="w-5 h-5 text-primary" />
+              <span className="font-bold text-primary">Z</span>
             </div>
             <div>
               <h1 className="text-lg font-bold font-headline leading-none hidden sm:block">Provider Console</h1>
-              <h1 className="text-lg font-bold font-headline leading-none sm:hidden">Hive</h1>
-              <p className="text-[10px] text-primary font-bold uppercase mt-0.5 tracking-tight group-hover:underline">WorkBee Home</p>
+              <h1 className="text-lg font-bold font-headline leading-none sm:hidden">Zero</h1>
+              <p className="text-[10px] text-primary font-bold uppercase mt-0.5 tracking-tight group-hover:underline">Zero Worries Home</p>
             </div>
           </Link>
           
@@ -157,7 +146,6 @@ export default function WorkerDashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Welcome Section */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-1">
             <h2 className="text-3xl font-black font-headline tracking-tight text-slate-900">Welcome, {profile.name}!</h2>
@@ -188,7 +176,6 @@ export default function WorkerDashboardPage() {
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -236,14 +223,12 @@ export default function WorkerDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-black">{openJobs.length}</div>
-              <p className="text-[10px] mt-2 text-primary-foreground/80">Available in the hive today</p>
+              <p className="text-[10px] mt-2 text-primary-foreground/80">Available in the platform today</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Dashboard Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Active Work Feed */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold font-headline text-slate-900 flex items-center gap-2">
@@ -301,36 +286,8 @@ export default function WorkerDashboardPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Recently Completed */}
-            {completedJobs.length > 0 && (
-              <div className="space-y-4 pt-4">
-                <h3 className="text-lg font-bold font-headline text-slate-800 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  Recently Completed
-                </h3>
-                <div className="space-y-3">
-                  {completedJobs.slice(0, 3).map(job => (
-                    <Card key={job.id} className="border-none shadow-sm flex items-center p-4 gap-4">
-                      <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-900 truncate">{job.title}</p>
-                        <p className="text-[10px] text-muted-foreground">Finished on {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-black text-green-600">₦{(job.workerPayout || 0).toLocaleString()}</p>
-                        <p className="text-[10px] text-muted-foreground">Paid</p>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Side Panel - Inbox Shortcut */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold font-headline text-slate-900">Recent Messages</h3>

@@ -35,17 +35,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 
-/**
- * Functional Admin Dashboard.
- * Pulls real-time data from Firestore to provide platform oversight.
- * Restricted to users with isAdmin: true.
- */
 export default function AdminDashboardPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
 
-  // Fetch current user's profile to check isAdmin and determine back path
   const userProfileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
@@ -59,21 +53,18 @@ export default function AdminDashboardPage() {
     return '/';
   }, [adminProfile]);
 
-  // Fetch all users - only if admin status is confirmed
   const usersQuery = useMemoFirebase(() => {
     if (!db || !adminProfile?.isAdmin) return null;
     return query(collection(db, 'users'), limit(100));
   }, [db, adminProfile]);
   const { data: users, isLoading: isLoadingUsers } = useCollection(usersQuery);
 
-  // Fetch all jobs - only if admin status is confirmed
   const jobsQuery = useMemoFirebase(() => {
     if (!db || !adminProfile?.isAdmin) return null;
     return query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(100));
   }, [db, adminProfile]);
   const { data: jobs, isLoading: isLoadingJobs } = useCollection(jobsQuery);
 
-  // Fetch all payments - only if admin status is confirmed
   const paymentsQuery = useMemoFirebase(() => {
     if (!db || !adminProfile?.isAdmin) return null;
     return query(collection(db, 'payments'), orderBy('paidAt', 'desc'), limit(100));
@@ -100,7 +91,6 @@ export default function AdminDashboardPage() {
     );
   }
 
-  // Auth Guard
   if (!user || !adminProfile?.isAdmin) {
     return (
       <div className="flex flex-col h-screen items-center justify-center p-4 text-center bg-slate-50">
@@ -118,7 +108,6 @@ export default function AdminDashboardPage() {
     );
   }
 
-  // Calculate stats
   const totalRevenue = payments?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0;
   const platformCommission = jobs?.reduce((acc, j) => acc + (j.commissionAmount || 0), 0) || 0;
   const activeJobs = jobs?.filter(j => j.status === 'In Progress').length || 0;
@@ -127,7 +116,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-muted/30 pb-12">
-      {/* Dashboard Header */}
       <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -155,11 +143,10 @@ export default function AdminDashboardPage() {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold font-headline">Hive Overview</h2>
-          <p className="text-sm text-muted-foreground mt-1">Real-time health and transaction metrics for WorkBee.</p>
+          <h2 className="text-3xl font-bold font-headline">Zero Worries Overview</h2>
+          <p className="text-sm text-muted-foreground mt-1">Real-time health and transaction metrics for the platform.</p>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="border-none shadow-md overflow-hidden">
             <div className="h-1 bg-green-500 w-full" />
@@ -184,7 +171,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">₦{platformCommission.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground mt-1">10% Hive maintenance fee</p>
+              <p className="text-xs text-muted-foreground mt-1">10% Platform fee</p>
             </CardContent>
           </Card>
 
@@ -213,7 +200,6 @@ export default function AdminDashboardPage() {
           </Card>
         </div>
 
-        {/* Detailed Data Tabs */}
         <Tabs defaultValue="jobs" className="space-y-6">
           <TabsList className="bg-white border p-1 rounded-xl">
             <TabsTrigger value="jobs" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white">Recent Jobs</TabsTrigger>
@@ -369,40 +355,38 @@ export default function AdminDashboardPage() {
                         <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {payments?.map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell className="text-xs font-medium">{p.jobId}</TableCell>
-                          <TableCell className="font-bold">₦{(p.amount || 0).toLocaleString()}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{p.reference}</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="bg-green-100 text-green-700">Paid</Badge>
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : 'N/A'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                      <TableBody>
+                        {payments?.map((p) => (
+                          <TableRow key={p.id}>
+                            <TableCell className="text-xs font-medium">{p.jobId}</TableCell>
+                            <TableCell className="font-bold">₦{(p.amount || 0).toLocaleString()}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{p.reference}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="bg-green-100 text-green-700">Paid</Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : 'N/A'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
-        {/* Action Notice */}
-        <div className="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 flex items-start gap-4">
-          <AlertCircle className="w-6 h-6 text-blue-600 shrink-0" />
-          <div>
-            <h4 className="font-bold text-blue-900">Admin Responsibility</h4>
-            <p className="text-sm text-blue-800 mt-1">
-              Use this dashboard to monitor platform health. As an admin, you have the authority to suspend workers who violate platform terms or approve those who have completed verification.
-            </p>
+          <div className="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 flex items-start gap-4">
+            <AlertCircle className="w-6 h-6 text-blue-600 shrink-0" />
+            <div>
+              <h4 className="font-bold text-blue-900">Admin Responsibility</h4>
+              <p className="text-sm text-blue-800 mt-1">
+                Use this dashboard to monitor platform health. As an admin, you have the authority to manage user status and ensure the safety of the Zero Worries community.
+              </p>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+        </main>
+      </div>
+    );
+  }

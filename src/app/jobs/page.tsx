@@ -9,16 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Briefcase, Eye, Clock, AlertCircle, Search } from 'lucide-react';
 import Link from 'next/link';
 
-/**
- * Public Job Feed.
- * Only shows 'Open' jobs to prevent noise from completed or active contracts.
- * Uses client-side sorting to bypass Firestore index requirements.
- */
 export default function FindJobPage() {
   const { user } = useUser();
   const db = useFirestore();
 
-  // Fetch user profile to determine back path
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
@@ -34,7 +28,6 @@ export default function FindJobPage() {
 
   const jobsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    // Only show jobs that are officially 'Open' and waiting for applicants
     return query(
       collection(db, 'jobs'), 
       where('status', '==', 'Open')
@@ -43,7 +36,6 @@ export default function FindJobPage() {
 
   const { data: jobsRaw, isLoading, error } = useCollection(jobsQuery);
 
-  // Client-side sort to ensure newest jobs appear first without requiring a composite index
   const jobs = React.useMemo(() => {
     if (!jobsRaw) return [];
     return [...jobsRaw].sort((a, b) => {
@@ -65,7 +57,7 @@ export default function FindJobPage() {
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black font-headline tracking-tight text-slate-900">Open Opportunities</h1>
-          <p className="text-muted-foreground mt-2">Browse the hive for new tasks and service requests.</p>
+          <p className="text-muted-foreground mt-2">Browse the platform for new tasks and service requests.</p>
         </div>
         <div className="flex items-center gap-2 bg-white border px-4 py-2 rounded-xl shadow-sm">
           <Search className="w-4 h-4 text-muted-foreground" />
@@ -76,7 +68,7 @@ export default function FindJobPage() {
       {error && (
         <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive">
           <AlertCircle className="w-5 h-5" />
-          <p className="text-sm font-medium">Could not load jobs. Please check your connection or security permissions.</p>
+          <p className="text-sm font-medium">Could not load jobs. Please check your connection.</p>
         </div>
       )}
 
@@ -124,7 +116,7 @@ export default function FindJobPage() {
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <Briefcase className="w-10 h-10 text-slate-300" />
           </div>
-          <h3 className="text-2xl font-black text-slate-900">The Hive is quiet...</h3>
+          <h3 className="text-2xl font-black text-slate-900">The feed is quiet...</h3>
           <p className="text-slate-500 mt-2 max-w-xs mx-auto">
             All current jobs have been taken. Check back later or post your own request to find help!
           </p>

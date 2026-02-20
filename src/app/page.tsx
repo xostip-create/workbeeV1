@@ -72,9 +72,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white shadow-lg">
-              <span className="font-bold text-lg">W</span>
+              <span className="font-bold text-lg">Z</span>
             </div>
-            <h1 className="text-xl font-bold text-primary font-headline tracking-tight">E&amp;F WorkBee</h1>
+            <h1 className="text-xl font-bold text-primary font-headline tracking-tight">Zero Worries</h1>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -178,14 +178,14 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8 animate-fade-in-up">
               <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 px-4 py-1">
-                The Trusted Hive for Services
+                The Trusted Hub for Every Task
               </Badge>
               <h2 className="text-5xl md:text-7xl font-extrabold text-foreground leading-[1.1] font-headline">
                 Reliable Workers. <br />
-                <span className="text-primary">Verified Skills.</span>
+                <span className="text-primary">Zero Worries.</span>
               </h2>
-              <p className="text-xl text-muted-foreground leading-relaxed max-w-lg">
-                Connect with local experts, browse specialized shops, or post your job to find the perfect help today.
+              <p className="text-xl text-muted-foreground leading-relaxed max-lg">
+                Connect with local experts, browse specialized shops, or post your job to find the perfect help today with complete peace of mind.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button asChild size="lg" className="h-14 px-8 text-lg font-bold bg-primary shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all">
@@ -237,7 +237,7 @@ export default function LandingPage() {
             <div className="text-center mb-16 space-y-4">
               <h2 className="text-3xl font-bold font-headline">Built for Reliability & Trust</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                WorkBee provides the tools you need to manage your service requests from first contact to final payout.
+                Zero Worries provides the tools you need to manage your service requests from first contact to final payout.
               </p>
             </div>
             
@@ -311,7 +311,7 @@ export default function LandingPage() {
               </div>
               
               <div className="order-1 lg:order-2 space-y-10">
-                <h2 className="text-4xl font-bold font-headline">How the Hive Works</h2>
+                <h2 className="text-4xl font-bold font-headline">How Zero Worries Works</h2>
                 
                 <div className="space-y-8">
                   <div className="flex gap-4">
@@ -355,7 +355,7 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-4">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold font-headline">Explore the Hive</h2>
+                <h2 className="text-3xl font-bold font-headline">Explore Zero Worries</h2>
                 <p className="text-muted-foreground">Find exactly what you need with our quick access modules.</p>
               </div>
               <Button asChild variant="outline" className="shrink-0">
@@ -391,11 +391,11 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto px-4 text-center space-y-8 relative z-10">
             <h2 className="text-4xl md:text-5xl font-bold font-headline">Ready to join the community?</h2>
             <p className="text-primary-foreground/80 text-lg">
-              Whether you're looking for help or looking to provide it, WorkBee is the safest way to connect and get things done.
+              Whether you're looking for help or looking to provide it, Zero Worries is the safest way to connect and get things done.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" variant="secondary" className="h-14 px-8 text-lg font-bold shadow-xl">
-                <Link href="/signup">Join the Hive</Link>
+                <Link href="/signup">Join the Platform</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="h-14 px-8 text-lg font-bold border-white/20 hover:bg-white/10 text-white">
                 <Link href="/login">Login to Account</Link>
@@ -414,9 +414,9 @@ export default function LandingPage() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white">
-                <span className="font-bold">W</span>
+                <span className="font-bold">Z</span>
               </div>
-              <h1 className="text-lg font-bold text-primary font-headline">E&amp;F WorkBee</h1>
+              <h1 className="text-lg font-bold text-primary font-headline">Zero Worries</h1>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Empowering local communities with reliable connections and secure payments.
@@ -456,7 +456,7 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto px-4 pt-8 border-t text-center">
           <p className="text-xs text-muted-foreground">
-            &copy; {currentYear || '...'} E&amp;F WorkBee. Built with trust for the community.
+            &copy; {currentYear || '...'} Zero Worries. Built with trust for the community.
           </p>
         </div>
       </footer>

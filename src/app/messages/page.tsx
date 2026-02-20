@@ -22,24 +22,16 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-/**
- * ChatRoomListItem Component
- * Fetches Job and Other User details for a specific chat room.
- */
 function ChatRoomListItem({ room, currentUserId }: { room: any, currentUserId: string }) {
   const db = useFirestore();
-  
-  // Find the other participant's ID
   const otherUserId = room.participants?.find((id: string) => id !== currentUserId);
   
-  // Fetch Job Details
   const jobRef = useMemoFirebase(() => {
     if (!db || !room.jobId) return null;
     return doc(db, 'jobs', room.jobId);
   }, [db, room.jobId]);
   const { data: job } = useDoc(jobRef);
 
-  // Fetch Other User Details
   const otherUserRef = useMemoFirebase(() => {
     if (!db || !otherUserId) return null;
     return doc(db, 'users', otherUserId);
@@ -97,16 +89,11 @@ function ChatRoomListItem({ room, currentUserId }: { room: any, currentUserId: s
   );
 }
 
-/**
- * Inbox Page for Workers and Customers.
- * Displays all chat rooms the user is participating in.
- */
 export default function MessagesPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const router = useRouter();
 
-  // Fetch all chat rooms where user is a participant
   const roomsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -179,7 +166,6 @@ export default function MessagesPage() {
           )}
         </div>
 
-        {/* Messaging Tips */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="bg-blue-50 border-blue-100 shadow-none">
             <CardHeader className="p-4 pb-2">
@@ -190,7 +176,7 @@ export default function MessagesPage() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <p className="text-[11px] text-blue-800 leading-relaxed font-medium">
-                Fast responses build trust. Users who reply within 30 minutes are 3x more likely to secure a contract.
+                Fast responses build trust. Users who reply within 30 minutes are more likely to secure a contract.
               </p>
             </CardContent>
           </Card>
@@ -204,7 +190,7 @@ export default function MessagesPage() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <p className="text-[11px] text-green-800 leading-relaxed font-medium">
-                Always use the official "OFFER PRICE" tool in chats to ensure your funds are protected by WorkBee Escrow.
+                Always use the official "OFFER PRICE" tool in chats to ensure your funds are protected by Zero Worries Escrow.
               </p>
             </CardContent>
           </Card>

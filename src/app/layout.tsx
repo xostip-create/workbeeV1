@@ -1,12 +1,11 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'E&F WorkBee - Trust & Reliability',
-  description: 'Connect with workers, find local shops, and post jobs effortlessly.',
+  title: 'Zero Worries - Trust & Reliability',
+  description: 'Connect with workers, find local shops, and post jobs effortlessly with zero worries.',
 };
 
 export default function RootLayout({
