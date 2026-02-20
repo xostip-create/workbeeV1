@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -50,7 +49,6 @@ export default function CustomerDashboardPage() {
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
   // Fetch jobs posted by this customer
-  // Removed orderBy to avoid index requirements for now, sorting locally instead
   const myJobsQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(
@@ -121,6 +119,10 @@ export default function CustomerDashboardPage() {
           </Link>
           
           <div className="flex items-center gap-4">
+            <Link href="/messages" className="text-sm font-bold text-primary flex items-center gap-2 hover:underline mr-2">
+              <MessageSquare className="w-4 h-4" />
+              Inbox
+            </Link>
             <Link href="/profile">
               <Avatar className="h-9 w-9 border-2 border-primary/10 hover:border-primary/30 transition-all">
                 <AvatarImage src={profile.photoUrl} />
@@ -140,9 +142,9 @@ export default function CustomerDashboardPage() {
           </div>
           <div className="flex items-center gap-3">
             <Button asChild variant="outline" size="lg" className="h-12 border-slate-200">
-              <Link href="/workers" className="gap-2">
-                <Search className="w-4 h-4" />
-                Find Help
+              <Link href="/messages" className="gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Messages
               </Link>
             </Button>
             <Button asChild size="lg" className="h-12 shadow-lg shadow-primary/20 bg-accent hover:bg-accent/90">
@@ -275,42 +277,26 @@ export default function CustomerDashboardPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Recently Completed */}
-            {completedJobs.length > 0 && (
-              <div className="space-y-4 pt-4">
-                <h3 className="text-lg font-bold font-headline text-slate-800 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  Completed History
-                </h3>
-                <div className="space-y-3">
-                  {completedJobs.slice(0, 5).map(job => (
-                    <Card key={job.id} className="border-none shadow-sm flex items-center p-4 gap-4">
-                      <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-900 truncate">{job.title}</p>
-                        <p className="text-[10px] text-muted-foreground">Assisted by {job.selectedApplicantName}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-black text-slate-900">₦{(job.totalPrice || 0).toLocaleString()}</p>
-                        <p className="text-[10px] text-muted-foreground">Total Paid</p>
-                      </div>
-                      <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                        <Link href={`/jobs/${job.id}`}>
-                          <ChevronRight className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Quick Actions / Tips */}
+          {/* Quick Actions / Inbox */}
           <div className="space-y-6">
+            <h3 className="text-lg font-bold font-headline text-slate-900">Inbox</h3>
+            
+            <Card className="border-none shadow-sm bg-white overflow-hidden">
+              <CardContent className="p-0">
+                <div className="p-6 text-center space-y-4">
+                  <MessageSquare className="w-10 h-10 text-primary/20 mx-auto" />
+                  <p className="text-xs text-muted-foreground">Keep the conversation going with your applicants to finalize terms.</p>
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link href="/messages">View All Chats</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Separator />
+
             <h3 className="text-lg font-bold font-headline text-slate-900">Quick Actions</h3>
             <div className="grid grid-cols-1 gap-3">
               <Button asChild variant="outline" className="justify-start h-14 px-4 gap-3 bg-white hover:bg-slate-50 border-none shadow-sm">
@@ -336,18 +322,6 @@ export default function CustomerDashboardPage() {
                 </Link>
               </Button>
             </div>
-
-            <Card className="bg-primary/5 border-none shadow-none mt-6">
-              <CardHeader className="p-5">
-                <CardTitle className="text-sm font-bold flex items-center gap-2 text-primary">
-                  <Banknote className="w-4 h-4" />
-                  Escrow Protection
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 pb-5 text-[11px] text-slate-600 leading-relaxed">
-                Remember: Your payments are held securely by WorkBee and are only released to the worker once you mark the job as completed.
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>

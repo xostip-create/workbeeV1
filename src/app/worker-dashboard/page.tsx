@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -66,7 +65,7 @@ export default function WorkerDashboardPage() {
     return query(
       collection(db, 'jobs'),
       where('status', '==', 'Open'),
-      limit(20) // Get a few more to allow local sorting
+      limit(20)
     );
   }, [db]);
   const { data: openJobsRaw, isLoading: isLoadingOpenJobs } = useCollection(openJobsQuery);
@@ -89,7 +88,7 @@ export default function WorkerDashboardPage() {
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
       })
-      .slice(0, 6); // Limit to top 6 after sorting
+      .slice(0, 6);
   }, [openJobsRaw]);
 
   const isLoading = isUserLoading || isProfileLoading;
@@ -143,10 +142,10 @@ export default function WorkerDashboardPage() {
           </Link>
           
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end">
-              <span className="text-xs font-bold text-foreground">{profile.name}</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-tighter">Verified Worker</span>
-            </div>
+            <Link href="/messages" className="text-sm font-bold text-primary flex items-center gap-2 hover:underline mr-2">
+              <MessageSquare className="w-4 h-4" />
+              Inbox
+            </Link>
             <Link href="/profile">
               <Avatar className="h-9 w-9 border-2 border-primary/10 hover:border-primary/30 transition-all">
                 <AvatarImage src={profile.photoUrl} />
@@ -175,9 +174,9 @@ export default function WorkerDashboardPage() {
           </div>
           <div className="flex items-center gap-3">
             <Button asChild variant="outline" size="lg" className="h-12 border-slate-200">
-              <Link href="/profile" className="gap-2">
-                <User className="w-4 h-4" />
-                Profile
+              <Link href="/messages" className="gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Negotiations
               </Link>
             </Button>
             <Button asChild size="lg" className="h-12 shadow-lg shadow-primary/20">
@@ -272,7 +271,7 @@ export default function WorkerDashboardPage() {
                     <Separator className="bg-slate-50" />
                     <CardFooter className="pt-4 mt-auto flex gap-2">
                       <Button asChild variant="outline" size="sm" className="flex-1 h-9 text-xs gap-2 border-slate-200">
-                        <Link href={`/chat/${job.id}`}>
+                        <Link href={`/chat/${job.id}_${user.uid}`}>
                           <MessageSquare className="w-3.5 h-3.5" />
                           Chat
                         </Link>
@@ -331,12 +330,33 @@ export default function WorkerDashboardPage() {
             )}
           </div>
 
-          {/* Side Panel - New Gigs */}
+          {/* Side Panel - Inbox Shortcut */}
           <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold font-headline text-slate-900">Recent Messages</h3>
+              <Button asChild variant="link" size="sm" className="text-primary text-xs h-auto p-0">
+                <Link href="/messages">View Inbox</Link>
+              </Button>
+            </div>
+
+            <Card className="border-none shadow-sm bg-white overflow-hidden">
+              <CardContent className="p-0">
+                <div className="p-6 text-center space-y-4">
+                  <MessageSquare className="w-10 h-10 text-primary/20 mx-auto" />
+                  <p className="text-xs text-muted-foreground">Stay in touch with your clients to finalize your next contract.</p>
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link href="/messages">Open Messaging Inbox</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Separator />
+
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold font-headline text-slate-900">New Opportunities</h3>
               <Button asChild variant="link" size="sm" className="text-primary text-xs h-auto p-0">
-                <Link href="/jobs">See all gigs</Link>
+                <Link href="/jobs">See all</Link>
               </Button>
             </div>
 
@@ -375,19 +395,6 @@ export default function WorkerDashboardPage() {
                 </div>
               )}
             </div>
-
-            {/* Quick Tips */}
-            <Card className="bg-primary/5 border-none shadow-none">
-              <CardHeader className="p-5">
-                <CardTitle className="text-sm font-bold flex items-center gap-2 text-primary">
-                  <TrendingUp className="w-4 h-4" />
-                  Growth Tip
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 pb-5 text-[11px] text-slate-600 leading-relaxed">
-                Respond to messages within 1 hour to increase your chance of being selected for future high-budget gigs by 40%.
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>
