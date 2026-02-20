@@ -17,9 +17,6 @@ import {
   Send, 
   CreditCard, 
   Loader2, 
-  Lock, 
-  Info, 
-  ShieldAlert, 
   Banknote, 
   Check, 
   X, 
@@ -27,9 +24,10 @@ import {
   Clock,
   Phone,
   MapPin,
-  Eye,
-  EyeOff,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle2,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -45,10 +43,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 /**
  * Functional Chat Screen with Price Proposals and Post-Payment Contact Unlocking.
- * Allows negotiation (chatting) before payment, but filters contact info.
+ * Enhanced to show accepted agreements clearly for both parties.
  */
 export default function ChatPage() {
   const params = useParams();
@@ -104,7 +103,7 @@ export default function ChatPage() {
   }, [db, jobId]);
   const { data: payments, isLoading: isLoadingPayment } = useCollection(paymentsQuery);
 
-  const isPaid = (payments && payments.length > 0);
+  const isPaid = !!(payments && payments.length > 0);
 
   // Messages
   const messagesQuery = useMemoFirebase(() => {
@@ -117,17 +116,19 @@ export default function ChatPage() {
   }, [db, jobId]);
   const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
 
-  // Price Proposals
+  // Price Proposals - fetching recent one
   const proposalsQuery = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return query(
       collection(db, 'jobs', jobId, 'proposals'),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(5)
     );
   }, [db, jobId]);
   const { data: proposals } = useCollection(proposalsQuery);
 
-  const activeProposal = proposals?.find(p => p.status === 'Pending' || p.status === 'Countered');
+  // Active or most recent accepted proposal
+  const activeProposal = proposals?.find(p => p.status === 'Accepted') || proposals?.find(p => p.status === 'Pending' || p.status === 'Countered');
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -148,7 +149,7 @@ export default function ChatPage() {
         toast({
           variant: 'destructive',
           title: '⚠️ Safety Notice',
-          description: 'Sharing contact details (phone/email) is restricted before payment for platform safety.',
+          description: 'Sharing contact details is restricted before payment for security.',
         });
         return;
       }
@@ -182,7 +183,7 @@ export default function ChatPage() {
     setProposalAmount('');
     setProposalDesc('');
     setIsProposalDialogOpen(false);
-    toast({ title: "Proposal Sent", description: "Your price proposal has been sent." });
+    toast({ title: "Proposal Sent", description: "The price offer is now live." });
   };
 
   const handleRespondToProposal = (proposalId: string, status: 'Accepted' | 'Rejected') => {
@@ -195,8 +196,8 @@ export default function ChatPage() {
     });
 
     toast({ 
-      title: `Proposal ${status}`, 
-      description: `You have ${status.toLowerCase()} the proposal.` 
+      title: `Price ${status}`, 
+      description: status === 'Accepted' ? 'Deal agreed! Proceed to payment.' : 'Price rejected.' 
     });
   };
 
@@ -204,9 +205,9 @@ export default function ChatPage() {
     if (isPaid && otherUserProfile?.phoneNumber) {
       window.location.href = `tel:${otherUserProfile.phoneNumber}`;
     } else if (!isPaid) {
-      toast({ title: "Payment Required", description: "Phone calls are unlocked after payment is secured." });
+      toast({ title: "Payment Required", description: "Secure the funds first to unlock voice calls." });
     } else {
-      toast({ title: "No Phone Number", description: "This user hasn't added a phone number to their profile." });
+      toast({ title: "No Phone Number", description: "User hasn't provided a contact number." });
     }
   };
 
@@ -218,32 +219,29 @@ export default function ChatPage() {
     );
   }
 
-  // Access check: Only participants can view
   if (!chatRoom || !user || !chatRoom.participants?.includes(user.uid)) {
     return (
       <div className="flex flex-col h-screen items-center justify-center p-4 text-center space-y-4">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-600">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
-        <h2 className="text-xl font-bold">Access Denied</h2>
-        <p className="text-muted-foreground max-w-xs">You are not authorized to view this chat. Only the customer and selected worker can participate.</p>
+        <h2 className="text-xl font-bold">Privacy Restriction</h2>
+        <p className="text-muted-foreground">This secure channel is only for assigned participants.</p>
         <Button onClick={() => router.push('/')}>Return Home</Button>
       </div>
     );
   }
 
-  const otherParticipantName = otherUserProfile?.name || 'User';
+  const otherParticipantName = otherUserProfile?.name || 'Partner';
+  const isCustomer = user.uid === job?.customerId;
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">
       <header className="flex flex-col border-b bg-white sticky top-0 z-10 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-9 w-9">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <Avatar className="w-10 h-10 border shadow-sm">
-              <AvatarImage src={otherUserProfile?.photoUrl} alt={otherParticipantName} />
+              <AvatarImage src={otherUserProfile?.photoUrl} />
               <AvatarFallback className="bg-primary/10 text-primary font-bold">
                 {otherParticipantName.charAt(0)}
               </AvatarFallback>
@@ -252,33 +250,34 @@ export default function ChatPage() {
               <h2 className="text-sm font-bold leading-none">{otherParticipantName}</h2>
               <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
                 {isPaid ? (
-                  <span className="text-green-600 font-bold flex items-center gap-1">
+                  <span className="text-green-600 font-bold flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
                     <CheckCircle2 className="w-2.5 h-2.5" />
-                    Verified Partner
+                    Funds Secured
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 font-medium">
                     <Clock className="w-2.5 h-2.5" />
-                    Negotiation Phase
+                    Negotiating
                   </span>
                 )}
               </p>
             </div>
           </div>
+          
           <div className="flex items-center gap-2">
             {!isPaid && (
               <Dialog open={isProposalDialogOpen} onOpenChange={setIsProposalDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 border-primary text-primary h-8 font-bold">
+                  <Button variant="outline" size="sm" className="h-8 font-bold gap-2 text-primary border-primary/20">
                     <Banknote className="w-4 h-4" />
-                    Propose Price
+                    Offer Price
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Propose a Price</DialogTitle>
+                    <DialogTitle>Make an Offer</DialogTitle>
                     <DialogDescription>
-                      Suggest a budget for this job. Negotiation is key to a fair deal.
+                      Propose the final amount for this service.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
@@ -293,103 +292,140 @@ export default function ChatPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="desc">Notes (Optional)</Label>
+                      <Label htmlFor="desc">Notes</Label>
                       <Textarea 
                         id="desc" 
-                        placeholder="Explain your pricing or scope..." 
+                        placeholder="Explain the scope..." 
                         value={proposalDesc}
                         onChange={(e) => setProposalDesc(e.target.value)}
                       />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleProposePrice} disabled={!proposalAmount} className="w-full">Send Proposal</Button>
+                    <Button onClick={handleProposePrice} disabled={!proposalAmount} className="w-full">Submit Offer</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             )}
-            {!isPaid && user.uid === job?.customerId && (
-              <Button asChild size="sm" className="gap-2 bg-accent hover:bg-accent/90 h-8 font-bold shadow-sm">
-                <Link href={`/payments/${jobId}`}>
-                  <CreditCard className="w-4 h-4" />
-                  Pay Now
-                </Link>
-              </Button>
-            )}
           </div>
         </div>
         
-        {/* Post-Payment Action Bar */}
-        <div className="px-4 py-2 border-t flex items-center gap-4 bg-slate-50/80">
+        {/* Contact Strip */}
+        <div className="px-4 py-1.5 border-t flex items-center gap-4 bg-slate-50/50">
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`flex-1 h-8 text-[11px] font-bold gap-2 ${isPaid ? 'text-primary' : 'text-muted-foreground opacity-60'}`}
+            className={cn("flex-1 h-8 text-[11px] font-bold gap-2", isPaid ? "text-primary" : "text-muted-foreground opacity-50")}
             onClick={handleCall}
           >
-            <Phone className="w-3.5 h-3.5" />
+            <Phone className="w-3 h-3" />
             {isPaid ? 'Call Now' : 'Call (Locked)'}
           </Button>
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`flex-1 h-8 text-[11px] font-bold gap-2 ${isPaid ? 'text-primary' : 'text-muted-foreground opacity-60'}`}
+            className={cn("flex-1 h-8 text-[11px] font-bold gap-2", isPaid ? "text-primary" : "text-muted-foreground opacity-50")}
             disabled={!isPaid}
-            onClick={() => toast({ title: "Location Shared", description: "Current location sent to partner." })}
+            onClick={() => toast({ title: "Location Shared", description: "Tracking active." })}
           >
-            <MapPin className="w-3.5 h-3.5" />
-            {isPaid ? 'Share Location' : 'Location (Locked)'}
+            <MapPin className="w-3 h-3" />
+            {isPaid ? 'Live Location' : 'Location (Locked)'}
           </Button>
         </div>
       </header>
 
       <ScrollArea className="flex-1 p-4">
-        <div className="flex flex-col gap-4 max-w-2xl mx-auto pb-8">
-          {/* Active Proposal Card */}
+        <div className="flex flex-col gap-4 max-w-2xl mx-auto pb-10">
+          {/* Active / Accepted Proposal Card */}
           {activeProposal && (
-            <Card className="border-primary/20 bg-primary/5 shadow-sm mb-4 overflow-hidden border-2">
-               <CardHeader className="py-2.5 px-4 flex flex-row items-center justify-between border-b bg-primary/10">
+            <Card className={cn(
+              "border-2 shadow-sm mb-4 overflow-hidden transition-all",
+              activeProposal.status === 'Accepted' 
+                ? "border-green-500 bg-green-50/50 ring-4 ring-green-500/10" 
+                : "border-primary/20 bg-primary/5"
+            )}>
+               <CardHeader className={cn(
+                 "py-2.5 px-4 flex flex-row items-center justify-between border-b",
+                 activeProposal.status === 'Accepted' ? "bg-green-100/50" : "bg-primary/10"
+               )}>
                  <div className="flex items-center gap-2">
-                    <Banknote className="w-4 h-4 text-primary" />
-                    <CardTitle className="text-xs font-black uppercase tracking-wider">Price Negotiation</CardTitle>
+                    {activeProposal.status === 'Accepted' ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Banknote className="w-4 h-4 text-primary" />
+                    )}
+                    <CardTitle className={cn(
+                      "text-xs font-black uppercase tracking-wider",
+                      activeProposal.status === 'Accepted' ? "text-green-800" : "text-primary"
+                    )}>
+                      {activeProposal.status === 'Accepted' ? 'Price Finalized' : 'Current Offer'}
+                    </CardTitle>
                  </div>
-                 <Badge variant="outline" className="text-[9px] bg-white border-primary/20">{activeProposal.status}</Badge>
+                 <Badge 
+                    variant={activeProposal.status === 'Accepted' ? 'default' : 'outline'}
+                    className={cn(
+                      "text-[9px] uppercase",
+                      activeProposal.status === 'Accepted' ? "bg-green-600 border-none" : "bg-white border-primary/20"
+                    )}
+                  >
+                    {activeProposal.status}
+                  </Badge>
                </CardHeader>
-               <CardContent className="p-4 space-y-2">
-                  <div className="text-2xl font-black text-primary">₦{activeProposal.amount.toLocaleString()}</div>
-                  {activeProposal.description && <p className="text-xs text-muted-foreground leading-relaxed italic">"{activeProposal.description}"</p>}
-                  <p className="text-[10px] text-muted-foreground font-medium">Proposed by {activeProposal.proposerId === user.uid ? 'you' : otherParticipantName}</p>
+               <CardContent className="p-4 flex items-center justify-between gap-4">
+                  <div className="space-y-1 flex-1">
+                    <div className={cn(
+                      "text-3xl font-black",
+                      activeProposal.status === 'Accepted' ? "text-green-700" : "text-primary"
+                    )}>
+                      ₦{activeProposal.amount.toLocaleString()}
+                    </div>
+                    {activeProposal.description && (
+                      <p className="text-xs text-muted-foreground italic line-clamp-2">"{activeProposal.description}"</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
+                      Proposed by {activeProposal.proposerId === user.uid ? 'you' : otherParticipantName}
+                    </p>
+                  </div>
+                  
+                  {activeProposal.status === 'Accepted' && !isPaid && isCustomer && (
+                    <Button asChild size="sm" className="bg-accent hover:bg-accent/90 shadow-lg shadow-accent/20 font-black h-12 px-6">
+                      <Link href={`/payments/${jobId}`} className="gap-2">
+                        <ShieldCheck className="w-4 h-4" />
+                        PAY NOW
+                      </Link>
+                    </Button>
+                  )}
                </CardContent>
                {activeProposal.recipientId === user.uid && activeProposal.status === 'Pending' && (
                  <CardFooter className="bg-white p-2 flex gap-2 border-t">
-                    <Button variant="outline" size="sm" className="flex-1 h-9 text-xs font-bold text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleRespondToProposal(activeProposal.id, 'Accepted')}>
-                      <Check className="w-3.5 h-3.5 mr-1.5" /> Accept
+                    <Button variant="outline" size="sm" className="flex-1 h-10 font-bold text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleRespondToProposal(activeProposal.id, 'Accepted')}>
+                      <Check className="w-4 h-4 mr-2" /> ACCEPT DEAL
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 h-9 text-xs font-bold text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleRespondToProposal(activeProposal.id, 'Rejected')}>
-                      <X className="w-3.5 h-3.5 mr-1.5" /> Reject
+                    <Button variant="outline" size="sm" className="flex-1 h-10 font-bold text-destructive border-destructive/10 hover:bg-destructive/5" onClick={() => handleRespondToProposal(activeProposal.id, 'Rejected')}>
+                      <X className="w-4 h-4 mr-2" /> REJECT
                     </Button>
                  </CardFooter>
                )}
             </Card>
           )}
 
-          {!isPaid && (
-            <Alert className="mb-4 bg-amber-50 border-amber-200 shadow-sm">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <AlertTitle className="text-amber-800 text-xs font-black uppercase tracking-tight">Escrow Required</AlertTitle>
-              <AlertDescription className="text-amber-700 text-[11px] leading-tight">
-                {user.uid === job?.customerId 
-                  ? "Negotiate the price using the proposal tool. Once agreed, complete payment to unlock voice calls and location sharing."
-                  : "Chat is open for negotiation. Your contact details will be automatically shared once the customer funds the escrow."}
+          {activeProposal?.status === 'Accepted' && !isPaid && (
+            <Alert className="mb-4 bg-blue-50 border-blue-200 shadow-sm animate-pulse">
+              <Zap className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-blue-800 text-xs font-black uppercase tracking-tight">Price Agreed!</AlertTitle>
+              <AlertDescription className="text-blue-700 text-[11px] leading-tight">
+                {isCustomer 
+                  ? "Final step: Fund the escrow to unlock full contact details and start the work."
+                  : "Waiting for the customer to fund the escrow. Full contact details will unlock automatically."}
               </AlertDescription>
             </Alert>
           )}
 
           <div className="space-y-4">
             {messages?.length === 0 && (
-              <div className="text-center py-10 opacity-40">
-                <MessageCircle className="w-10 h-10 mx-auto mb-2" />
-                <p className="text-xs font-medium">No messages yet. Start the conversation!</p>
+              <div className="text-center py-16 opacity-30">
+                <MessageCircle className="w-12 h-12 mx-auto mb-3" />
+                <p className="text-sm font-medium">Agreement starts with a hello.</p>
               </div>
             )}
             
@@ -399,11 +435,12 @@ export default function ChatPage() {
                 className={`flex flex-col ${msg.senderId === user.uid ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
+                  className={cn(
+                    "max-w-[85%] px-4 py-2.5 rounded-2xl text-[13px] shadow-sm leading-relaxed",
                     msg.senderId === user.uid
                       ? 'bg-primary text-primary-foreground rounded-tr-none'
                       : 'bg-white border text-foreground rounded-tl-none'
-                  }`}
+                  )}
                 >
                   {msg.text}
                 </div>
@@ -422,13 +459,13 @@ export default function ChatPage() {
           <Input 
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Type a message..." 
-            className="flex-1 bg-slate-50 border-slate-200 focus-visible:ring-primary h-11"
+            placeholder="Discuss details..." 
+            className="flex-1 bg-slate-50 border-slate-200 h-11 focus-visible:ring-primary"
           />
           <Button 
             type="submit" 
             size="icon" 
-            className="rounded-full shrink-0 h-11 w-11 shadow-lg shadow-primary/20" 
+            className="rounded-full h-11 w-11 shadow-lg shadow-primary/20" 
             disabled={!messageText.trim()}
           >
             <Send className="w-5 h-5" />
