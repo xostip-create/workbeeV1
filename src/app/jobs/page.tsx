@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,7 +15,22 @@ import Link from 'next/link';
  * Uses client-side sorting to bypass Firestore index requirements.
  */
 export default function FindJobPage() {
+  const { user } = useUser();
   const db = useFirestore();
+
+  // Fetch user profile to determine back path
+  const profileRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user]);
+  const { data: profile } = useDoc(profileRef);
+
+  const homePath = React.useMemo(() => {
+    if (!profile) return '/';
+    if (profile.accountType === 'Worker') return '/worker-dashboard';
+    if (profile.accountType === 'Customer') return '/customer-dashboard';
+    return '/';
+  }, [profile]);
 
   const jobsQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -41,9 +56,9 @@ export default function FindJobPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Button asChild variant="ghost" className="mb-6 gap-2">
-        <Link href="/">
+        <Link href={homePath}>
           <ArrowLeft className="w-4 h-4" />
-          Back to Home
+          {profile ? 'Back to Dashboard' : 'Back to Home'}
         </Link>
       </Button>
       

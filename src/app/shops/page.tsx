@@ -1,9 +1,8 @@
-
 'use client';
 
 import React from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, limit } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, limit, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Store, MapPin, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -15,7 +14,22 @@ import { Badge } from '@/components/ui/badge';
  * Fetches shop listings directly from the Firestore 'shops' collection.
  */
 export default function ShopsPage() {
+  const { user } = useUser();
   const db = useFirestore();
+
+  // Fetch user profile to determine back path
+  const profileRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user]);
+  const { data: profile } = useDoc(profileRef);
+
+  const homePath = React.useMemo(() => {
+    if (!profile) return '/';
+    if (profile.accountType === 'Worker') return '/worker-dashboard';
+    if (profile.accountType === 'Customer') return '/customer-dashboard';
+    return '/';
+  }, [profile]);
 
   // Querying for potential shops collection
   const shopsQuery = useMemoFirebase(() => {
@@ -28,9 +42,9 @@ export default function ShopsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <Button asChild variant="ghost" className="mb-6 gap-2">
-        <Link href="/">
+        <Link href={homePath}>
           <ArrowLeft className="w-4 h-4" />
-          Back to Home
+          {profile ? 'Back to Dashboard' : 'Back to Home'}
         </Link>
       </Button>
       

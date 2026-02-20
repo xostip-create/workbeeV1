@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -67,6 +66,13 @@ export default function ProfilePage() {
   }, [user, db]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
+
+  const homePath = React.useMemo(() => {
+    if (!profile) return '/';
+    if (profile.accountType === 'Worker') return '/worker-dashboard';
+    if (profile.accountType === 'Customer') return '/customer-dashboard';
+    return '/';
+  }, [profile]);
 
   // Fetch reviews for this user
   const reviewsQuery = useMemoFirebase(() => {
@@ -152,7 +158,7 @@ export default function ProfilePage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto space-y-8">
         <Button asChild variant="ghost" className="mb-2 gap-2">
-          <Link href="/"><ArrowLeft className="w-4 h-4" />Back to Home</Link>
+          <Link href={homePath}><ArrowLeft className="w-4 h-4" />{profile ? 'Back to Dashboard' : 'Back to Home'}</Link>
         </Button>
 
         <Card className="shadow-lg border-t-4 border-t-primary overflow-hidden">

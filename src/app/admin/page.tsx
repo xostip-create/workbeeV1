@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -46,12 +45,19 @@ export default function AdminDashboardPage() {
   const db = useFirestore();
   const { toast } = useToast();
 
-  // Fetch current user's profile to check isAdmin
+  // Fetch current user's profile to check isAdmin and determine back path
   const userProfileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
   }, [db, user]);
   const { data: adminProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+
+  const homePath = React.useMemo(() => {
+    if (!adminProfile) return '/';
+    if (adminProfile.accountType === 'Worker') return '/worker-dashboard';
+    if (adminProfile.accountType === 'Customer') return '/customer-dashboard';
+    return '/';
+  }, [adminProfile]);
 
   // Fetch all users - only if admin status is confirmed
   const usersQuery = useMemoFirebase(() => {
@@ -126,7 +132,7 @@ export default function AdminDashboardPage() {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button asChild variant="ghost" size="icon">
-              <Link href="/">
+              <Link href={homePath}>
                 <ArrowLeft className="w-5 h-5" />
               </Link>
             </Button>
