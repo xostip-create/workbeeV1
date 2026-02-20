@@ -345,7 +345,9 @@ export default function AdminDashboardPage() {
                 <CardDescription>Complete log of payments processed via Paystack.</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingPayments ? <Loader2 className="w-6 h-6 animate-spin mx-auto py-8" /> : (
+                {isLoadingPayments ? (
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto py-8" />
+                ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -355,38 +357,39 @@ export default function AdminDashboardPage() {
                         <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
                       </TableRow>
-                      <TableBody>
-                        {payments?.map((p) => (
-                          <TableRow key={p.id}>
-                            <TableCell className="text-xs font-medium">{p.jobId}</TableCell>
-                            <TableCell className="font-bold">₦{(p.amount || 0).toLocaleString()}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground">{p.reference}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="bg-green-100 text-green-700">Paid</Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : 'N/A'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                    </TableHeader>
+                    <TableBody>
+                      {payments?.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="text-xs font-medium">{p.jobId}</TableCell>
+                          <TableCell className="font-bold">₦{(p.amount || 0).toLocaleString()}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{p.reference}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="bg-green-100 text-green-700">Paid</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-          <div className="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-blue-600 shrink-0" />
-            <div>
-              <h4 className="font-bold text-blue-900">Admin Responsibility</h4>
-              <p className="text-sm text-blue-800 mt-1">
-                Use this dashboard to monitor platform health. As an admin, you have the authority to manage user status and ensure the safety of the Zero Worries community.
-              </p>
-            </div>
+        <div className="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6 flex items-start gap-4">
+          <AlertCircle className="w-6 h-6 text-blue-600 shrink-0" />
+          <div>
+            <h4 className="font-bold text-blue-900">Admin Responsibility</h4>
+            <p className="text-sm text-blue-800 mt-1">
+              Use this dashboard to monitor platform health. As an admin, you have the authority to manage user status and ensure the safety of the Zero Worries community.
+            </p>
           </div>
-        </main>
-      </div>
-    );
-  }
+        </div>
+      </main>
+    </div>
+  );
+}
