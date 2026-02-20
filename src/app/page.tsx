@@ -175,7 +175,7 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-20 overflow-hidden bg-white">
+        <section className="relative pt-10 pb-16 md:py-20 overflow-hidden bg-white">
           <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8 animate-fade-in-up">
               <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 px-4 py-1">
