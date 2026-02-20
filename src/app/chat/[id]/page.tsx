@@ -27,7 +27,8 @@ import {
   CheckCircle2,
   ShieldCheck,
   Zap,
-  UserCheck
+  UserCheck,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -98,7 +99,7 @@ export default function ChatPage() {
   }, [db, otherUserId]);
   const { data: otherUserProfile } = useDoc(otherUserRef);
 
-  // Check for successful payment
+  // Check for successful payment record in Firestore
   const paymentsQuery = useMemoFirebase(() => {
     if (!db || !jobId) return null;
     return query(
@@ -123,12 +124,12 @@ export default function ChatPage() {
   }, [db, chatId]);
   const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
 
-  // Price Proposals - fetching recent one
+  // Price Proposals - fetching recent ones for this specific pairing
   const proposalsQuery = useMemoFirebase(() => {
-    if (!db || !jobId) return null;
+    if (!db || !jobId || !user || !otherUserId) return null;
     return query(
       collection(db, 'jobs', jobId, 'proposals'),
-      where('proposerId', 'in', [user?.uid, otherUserId].filter(Boolean)),
+      where('proposerId', 'in', [user.uid, otherUserId]),
       orderBy('createdAt', 'desc'),
       limit(5)
     );
@@ -219,7 +220,7 @@ export default function ChatPage() {
       status: 'In Progress',
     });
 
-    toast({ title: "Worker Hired!", description: `${otherUserProfile.name} is now assigned to this job.` });
+    toast({ title: "Worker Hired!", description: `${otherUserProfile.name} is now officially assigned.` });
   };
 
   const handleCall = () => {
@@ -282,19 +283,19 @@ export default function ChatPage() {
               <h2 className="text-sm font-bold leading-none">{otherParticipantName}</h2>
               <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
                 {isPaid ? (
-                  <span className="text-green-600 font-bold flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
+                  <span className="text-green-600 font-black flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
                     <CheckCircle2 className="w-2.5 h-2.5" />
-                    Escrow Funded
+                    FUNDED
                   </span>
                 ) : isHired ? (
-                  <span className="flex items-center gap-1 font-bold text-amber-600">
+                  <span className="flex items-center gap-1 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
                     <ShieldCheck className="w-2.5 h-2.5" />
-                    Hired - Pending Funds
+                    HIRED
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 font-medium">
+                  <span className="flex items-center gap-1 font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
                     <Clock className="w-2.5 h-2.5" />
-                    Negotiating
+                    NEGOTIATING
                   </span>
                 )}
               </p>
@@ -302,19 +303,19 @@ export default function ChatPage() {
           </div>
           
           <div className="flex items-center gap-2">
-            {!isPaid && (
+            {!isPaid && !isHired && (
               <Dialog open={isProposalDialogOpen} onOpenChange={setIsProposalDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 font-bold gap-2 text-primary border-primary/20">
+                  <Button variant="outline" size="sm" className="h-8 font-black gap-2 text-primary border-primary/20 bg-primary/5 hover:bg-primary/10">
                     <Banknote className="w-4 h-4" />
-                    Offer Price
+                    OFFER PRICE
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Make an Offer</DialogTitle>
+                    <DialogTitle>Make a Final Offer</DialogTitle>
                     <DialogDescription>
-                      Propose the final amount for this service.
+                      Propose the final amount for this service. This will be the amount held in escrow.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
@@ -326,29 +327,31 @@ export default function ChatPage() {
                         placeholder="e.g. 15000" 
                         value={proposalAmount}
                         onChange={(e) => setProposalAmount(e.target.value)}
+                        className="h-12 text-xl font-bold"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="desc">Notes</Label>
+                      <Label htmlFor="desc">Scope / Notes</Label>
                       <Textarea 
                         id="desc" 
-                        placeholder="Explain the scope..." 
+                        placeholder="Explain exactly what is included in this price..." 
                         value={proposalDesc}
                         onChange={(e) => setProposalDesc(e.target.value)}
+                        className="min-h-[100px]"
                       />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleProposePrice} disabled={!proposalAmount} className="w-full">Submit Offer</Button>
+                    <Button onClick={handleProposePrice} disabled={!proposalAmount} className="w-full font-black h-12 text-lg">Send Proposal</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             )}
             
             {isCustomer && !isHired && (
-              <Button size="sm" onClick={handleHireWorker} className="h-8 font-bold gap-2 bg-green-600 hover:bg-green-700">
+              <Button size="sm" onClick={handleHireWorker} className="h-8 font-black gap-2 bg-green-600 hover:bg-green-700 shadow-md shadow-green-100">
                 <UserCheck className="w-4 h-4" />
-                Hire Worker
+                HIRE NOW
               </Button>
             )}
           </div>
@@ -363,17 +366,17 @@ export default function ChatPage() {
             onClick={handleCall}
           >
             <Phone className="w-3 h-3" />
-            {isPaid ? 'Call Now' : 'Call (Locked)'}
+            {isPaid ? 'Direct Call' : 'Call (LOCKED)'}
           </Button>
           <Button 
             variant="ghost" 
             size="sm" 
             className={cn("flex-1 h-8 text-[11px] font-bold gap-2", isPaid ? "text-primary" : "text-muted-foreground opacity-50")}
             disabled={!isPaid}
-            onClick={() => toast({ title: "Location Shared", description: "Tracking active." })}
+            onClick={() => toast({ title: "Tracking Active", description: "Worker's live location shared." })}
           >
             <MapPin className="w-3 h-3" />
-            {isPaid ? 'Live Location' : 'Location (Locked)'}
+            {isPaid ? 'Live Location' : 'Location (LOCKED)'}
           </Button>
         </div>
       </header>
@@ -383,75 +386,75 @@ export default function ChatPage() {
           {/* Active / Accepted Proposal Card */}
           {activeProposal && (
             <Card className={cn(
-              "border-2 shadow-sm mb-4 overflow-hidden transition-all",
+              "border-2 shadow-xl mb-6 overflow-hidden transition-all",
               activeProposal.status === 'Accepted' 
-                ? "border-green-500 bg-green-50/50 ring-4 ring-green-500/10" 
-                : "border-primary/20 bg-primary/5"
+                ? "border-green-600 bg-green-50/50 ring-4 ring-green-500/5" 
+                : "border-primary/30 bg-primary/5"
             )}>
                <CardHeader className={cn(
-                 "py-2.5 px-4 flex flex-row items-center justify-between border-b",
-                 activeProposal.status === 'Accepted' ? "bg-green-100/50" : "bg-primary/10"
+                 "py-3 px-5 flex flex-row items-center justify-between border-b",
+                 activeProposal.status === 'Accepted' ? "bg-green-100" : "bg-primary/10"
                )}>
                  <div className="flex items-center gap-2">
                     {activeProposal.status === 'Accepted' ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <CheckCircle2 className="w-5 h-5 text-green-700" />
                     ) : (
-                      <Banknote className="w-4 h-4 text-primary" />
+                      <Banknote className="w-5 h-5 text-primary" />
                     )}
                     <CardTitle className={cn(
-                      "text-xs font-black uppercase tracking-wider",
+                      "text-xs font-black uppercase tracking-[0.1em]",
                       activeProposal.status === 'Accepted' ? "text-green-800" : "text-primary"
                     )}>
-                      {activeProposal.status === 'Accepted' ? 'Price Finalized' : 'Current Offer'}
+                      {activeProposal.status === 'Accepted' ? 'Agreed Price' : 'Current Proposal'}
                     </CardTitle>
                  </div>
                  <Badge 
                     variant={activeProposal.status === 'Accepted' ? 'default' : 'outline'}
                     className={cn(
-                      "text-[9px] uppercase",
-                      activeProposal.status === 'Accepted' ? "bg-green-600 border-none" : "bg-white border-primary/20"
+                      "text-[9px] font-black uppercase px-3",
+                      activeProposal.status === 'Accepted' ? "bg-green-600 border-none" : "bg-white border-primary/20 text-primary"
                     )}
                   >
                     {activeProposal.status}
                   </Badge>
                </CardHeader>
-               <CardContent className="p-4 flex items-center justify-between gap-4">
-                  <div className="space-y-1 flex-1">
+               <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="space-y-1.5 flex-1">
                     <div className={cn(
-                      "text-3xl font-black",
-                      activeProposal.status === 'Accepted' ? "text-green-700" : "text-primary"
+                      "text-4xl font-black tracking-tighter",
+                      activeProposal.status === 'Accepted' ? "text-green-800" : "text-primary"
                     )}>
                       ₦{activeProposal.amount.toLocaleString()}
                     </div>
                     {activeProposal.description && (
-                      <p className="text-xs text-muted-foreground italic line-clamp-2">"{activeProposal.description}"</p>
+                      <p className="text-xs text-slate-600 italic font-medium">"{activeProposal.description}"</p>
                     )}
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
-                      Proposed by {activeProposal.proposerId === user?.uid ? 'you' : otherParticipantName}
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-tight mt-2">
+                      Proposed by {activeProposal.proposerId === user?.uid ? 'You' : otherParticipantName}
                     </p>
                   </div>
                   
                   {activeProposal.status === 'Accepted' && !isPaid && isCustomer && isHired && (
-                    <Button asChild size="sm" className="bg-accent hover:bg-accent/90 shadow-lg shadow-accent/20 font-black h-12 px-6">
+                    <Button asChild size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 font-black h-14 px-10 rounded-2xl animate-bounce">
                       <Link href={`/payments/${jobId}`} className="gap-2">
-                        <ShieldCheck className="w-4 h-4" />
-                        PAY NOW
+                        <ShieldCheck className="w-5 h-5" />
+                        SECURE PAY NOW
                       </Link>
                     </Button>
                   )}
 
                   {activeProposal.status === 'Accepted' && !isHired && isCustomer && (
-                    <Button onClick={handleHireWorker} size="sm" className="bg-green-600 hover:bg-green-700 font-black h-12 px-6">
-                       Hire Now
+                    <Button onClick={handleHireWorker} size="lg" className="w-full md:w-auto bg-green-600 hover:bg-green-700 font-black h-14 px-10 rounded-2xl">
+                       OFFICIALLY HIRE
                     </Button>
                   )}
                </CardContent>
                {activeProposal.recipientId === user?.uid && activeProposal.status === 'Pending' && (
-                 <CardFooter className="bg-white p-2 flex gap-2 border-t">
-                    <Button variant="outline" size="sm" className="flex-1 h-10 font-bold text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleRespondToProposal(activeProposal.id, 'Accepted')}>
-                      <Check className="w-4 h-4 mr-2" /> ACCEPT DEAL
+                 <CardFooter className="bg-white p-3 flex gap-3 border-t">
+                    <Button variant="outline" size="lg" className="flex-1 h-12 font-black text-green-700 border-green-200 bg-green-50 hover:bg-green-100" onClick={() => handleRespondToProposal(activeProposal.id, 'Accepted')}>
+                      <Check className="w-4 h-4 mr-2" /> ACCEPT
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 h-10 font-bold text-destructive border-destructive/10 hover:bg-destructive/5" onClick={() => handleRespondToProposal(activeProposal.id, 'Rejected')}>
+                    <Button variant="outline" size="lg" className="flex-1 h-12 font-black text-destructive border-destructive/10 hover:bg-destructive/5" onClick={() => handleRespondToProposal(activeProposal.id, 'Rejected')}>
                       <X className="w-4 h-4 mr-2" /> REJECT
                     </Button>
                  </CardFooter>
@@ -460,32 +463,32 @@ export default function ChatPage() {
           )}
 
           {activeProposal?.status === 'Accepted' && isHired && !isPaid && (
-            <Alert className="mb-4 bg-blue-50 border-blue-200 shadow-sm animate-pulse">
-              <Zap className="h-4 w-4 text-blue-600" />
-              <AlertTitle className="text-blue-800 text-xs font-black uppercase tracking-tight">Price Agreed!</AlertTitle>
-              <AlertDescription className="text-blue-700 text-[11px] leading-tight">
+            <Alert className="mb-6 bg-blue-50 border-blue-200 shadow-md">
+              <Zap className="h-5 w-5 text-blue-600" />
+              <AlertTitle className="text-blue-900 text-sm font-black uppercase tracking-tight">Hiring Complete - Funding Required</AlertTitle>
+              <AlertDescription className="text-blue-800 text-xs font-medium leading-tight mt-1">
                 {isCustomer 
-                  ? "Final step: Fund the escrow to unlock full contact details and start the work."
-                  : "Waiting for the customer to fund the escrow. Full contact details will unlock automatically."}
+                  ? "Final step: Deposit the funds into escrow. This unlocks contact details and confirms the task for the provider."
+                  : "Waiting for the customer to deposit funds. Your dashboard will update and contact details will unlock automatically."}
               </AlertDescription>
             </Alert>
           )}
 
           {!isHired && isCustomer && (
-             <Alert className="mb-4 bg-amber-50 border-amber-200 shadow-sm">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-amber-800 text-xs font-black uppercase tracking-tight">Hiring Required</AlertTitle>
-                <AlertDescription className="text-amber-700 text-[11px] leading-tight">
-                  You are chatting with this applicant. Click "Hire Worker" once you are ready to officially assign them to the job.
+             <Alert className="mb-6 bg-amber-50 border-amber-200 shadow-sm border-l-4 border-l-amber-500">
+                <AlertCircle className="h-5 w-5 text-amber-600" />
+                <AlertTitle className="text-amber-900 text-sm font-black uppercase tracking-tight">Agreement Phase</AlertTitle>
+                <AlertDescription className="text-amber-800 text-xs font-medium leading-tight mt-1">
+                  Once you agree on terms, click <strong>"OFFICIALLY HIRE"</strong> to assign this worker. You can negotiate with multiple applicants simultaneously.
                 </AlertDescription>
              </Alert>
           )}
 
           <div className="space-y-4">
             {messages?.length === 0 && (
-              <div className="text-center py-16 opacity-30">
-                <MessageCircle className="w-12 h-12 mx-auto mb-3" />
-                <p className="text-sm font-medium">Agreement starts with a hello.</p>
+              <div className="text-center py-20 opacity-20">
+                <MessageCircle className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-lg font-black tracking-widest uppercase">Start the Negotiation</p>
               </div>
             )}
             
@@ -496,15 +499,15 @@ export default function ChatPage() {
               >
                 <div
                   className={cn(
-                    "max-w-[85%] px-4 py-2.5 rounded-2xl text-[13px] shadow-sm leading-relaxed",
+                    "max-w-[85%] px-5 py-3 rounded-3xl text-[14px] shadow-sm leading-relaxed font-medium",
                     msg.senderId === user?.uid
                       ? 'bg-primary text-primary-foreground rounded-tr-none'
-                      : 'bg-white border text-foreground rounded-tl-none'
+                      : 'bg-white border text-slate-800 rounded-tl-none border-slate-200'
                   )}
                 >
                   {msg.text}
                 </div>
-                <span className="text-[9px] text-muted-foreground mt-1.5 px-1 font-medium">
+                <span className="text-[9px] text-slate-400 mt-2 px-2 font-bold uppercase tracking-tight">
                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -514,21 +517,21 @@ export default function ChatPage() {
         </div>
       </ScrollArea>
 
-      <footer className="p-4 border-t bg-white">
-        <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto flex items-center gap-2">
+      <footer className="p-4 border-t bg-white shadow-lg">
+        <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto flex items-center gap-3">
           <Input 
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Discuss details..." 
-            className="flex-1 bg-slate-50 border-slate-200 h-11 focus-visible:ring-primary"
+            placeholder="Discuss specific terms..." 
+            className="flex-1 bg-slate-50 border-slate-200 h-14 rounded-2xl px-6 focus-visible:ring-primary font-medium"
           />
           <Button 
             type="submit" 
             size="icon" 
-            className="rounded-full h-11 w-11 shadow-lg shadow-primary/20" 
+            className="rounded-2xl h-14 w-14 shadow-xl shadow-primary/20" 
             disabled={!messageText.trim()}
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-6 h-6" />
           </Button>
         </form>
       </footer>
