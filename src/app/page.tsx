@@ -65,27 +65,15 @@ export default function LandingPage() {
 
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-main');
   const trustImage = PlaceHolderImages.find(img => img.id === 'trust-security');
-  const brandLogo = PlaceHolderImages.find(img => img.id === 'brand-logo');
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 relative overflow-hidden rounded-lg shadow-sm border border-primary/10">
-              {brandLogo ? (
-                <Image 
-                  src={brandLogo.imageUrl} 
-                  alt="Zero Worries" 
-                  fill 
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-primary flex items-center justify-center text-white">
-                  <span className="font-bold">Z</span>
-                </div>
-              )}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+              <span className="font-black text-xl">Z</span>
             </div>
             <h1 className="text-xl font-bold text-primary font-headline tracking-tight">Zero Worries</h1>
           </Link>
@@ -426,11 +414,9 @@ export default function LandingPage() {
       <footer className="py-12 bg-white border-t">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 relative overflow-hidden rounded-lg">
-                {brandLogo && (
-                  <Image src={brandLogo.imageUrl} alt="Zero Worries" fill className="object-cover" />
-                )}
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+                <span className="font-black text-xl">Z</span>
               </div>
               <h1 className="text-lg font-bold text-primary font-headline">Zero Worries</h1>
             </Link>

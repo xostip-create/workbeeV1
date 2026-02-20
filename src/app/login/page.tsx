@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -10,9 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,7 +21,6 @@ export default function LoginPage() {
   const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const brandLogo = PlaceHolderImages.find(img => img.id === 'brand-logo');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,26 +59,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 relative overflow-hidden rounded-lg">
-              {brandLogo ? (
-                <Image src={brandLogo.imageUrl} alt="Zero Worries" fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full bg-primary rounded-full flex items-center justify-center text-white">
-                  <span className="font-bold">Z</span>
-                </div>
-              )}
+      <Card className="w-full max-w-md shadow-xl border-none">
+        <CardHeader className="space-y-1 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <span className="font-black text-3xl">Z</span>
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
           </div>
-          <CardDescription>
-            Enter your email and password to log in to your account
+          <CardTitle className="text-3xl font-bold font-headline">Welcome Back</CardTitle>
+          <CardDescription className="text-base">
+            Enter your email and password to access Zero Worries
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -90,6 +82,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
             <div className="space-y-2">
@@ -102,16 +95,17 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+          <CardFooter className="flex flex-col gap-4 pb-8">
+            <Button type="submit" className="w-full h-12 text-lg font-bold shadow-lg" disabled={isLoading}>
               {isLoading ? 'Logging in...' : 'Login'}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-primary hover:underline font-medium">
+              <Link href="/signup" className="text-primary hover:underline font-bold">
                 Sign up
               </Link>
             </div>

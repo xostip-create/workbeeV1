@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -28,11 +29,9 @@ import {
   Home
 } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function CustomerDashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -64,7 +63,6 @@ export default function CustomerDashboardPage() {
   }, [myJobsRaw]);
 
   const isLoading = isUserLoading || isProfileLoading;
-  const brandLogo = PlaceHolderImages.find(img => img.id === 'brand-logo');
 
   if (isLoading) {
     return (
@@ -102,14 +100,8 @@ export default function CustomerDashboardPage() {
       <header className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 relative overflow-hidden rounded-lg flex items-center justify-center group-hover:opacity-80 transition-opacity">
-              {brandLogo ? (
-                <Image src={brandLogo.imageUrl} alt="Zero Worries" fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full bg-primary flex items-center justify-center text-white">
-                  <span className="font-bold">Z</span>
-                </div>
-              )}
+            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+              <span className="font-black text-lg">Z</span>
             </div>
             <div>
               <h1 className="text-lg font-bold font-headline leading-none hidden sm:block">Customer Hub</h1>
@@ -140,13 +132,13 @@ export default function CustomerDashboardPage() {
             <p className="text-sm text-muted-foreground">Manage your help requests and track project progress.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="lg" className="h-12 border-slate-200">
+            <Button asChild variant="outline" size="lg" className="h-12 border-slate-200 font-bold">
               <Link href="/messages" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Messages
               </Link>
             </Button>
-            <Button asChild size="lg" className="h-12 shadow-lg shadow-primary/20 bg-accent hover:bg-accent/90">
+            <Button asChild size="lg" className="h-12 shadow-lg shadow-primary/20 bg-accent hover:bg-accent/90 font-bold">
               <Link href="/post-job" className="gap-2">
                 <PlusCircle className="w-4 h-4" />
                 Post New Job
@@ -229,7 +221,7 @@ export default function CustomerDashboardPage() {
                         <CardTitle className="text-md font-bold text-slate-800 line-clamp-1">{job.title}</CardTitle>
                         <Badge 
                           variant="outline" 
-                          className={`text-[10px] shrink-0 ${
+                          className={`text-[10px] shrink-0 font-bold ${
                             job.status === 'In Progress' 
                             ? 'bg-green-50 text-green-700 border-green-200' 
                             : 'bg-amber-50 text-amber-700 border-amber-200'
@@ -242,13 +234,13 @@ export default function CustomerDashboardPage() {
                     </CardHeader>
                     <Separator className="bg-slate-50" />
                     <CardFooter className="pt-4 mt-auto flex gap-2">
-                      <Button asChild variant="outline" size="sm" className="flex-1 h-9 text-xs gap-2 border-slate-200">
+                      <Button asChild variant="outline" size="sm" className="flex-1 h-9 text-xs gap-2 border-slate-200 font-bold">
                         <Link href={job.status === 'In Progress' ? `/chat/${job.id}` : `/jobs/${job.id}`}>
                           {job.status === 'In Progress' ? <MessageSquare className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           {job.status === 'In Progress' ? 'Chat' : 'Manage'}
                         </Link>
                       </Button>
-                      <Button asChild size="sm" className="flex-1 h-9 text-xs">
+                      <Button asChild size="sm" className="flex-1 h-9 text-xs font-bold">
                         <Link href={`/jobs/${job.id}`}>
                           Details
                         </Link>
@@ -283,7 +275,7 @@ export default function CustomerDashboardPage() {
                 <div className="p-6 text-center space-y-4">
                   <MessageSquare className="w-10 h-10 text-primary/20 mx-auto" />
                   <p className="text-xs text-muted-foreground">Keep the conversation going with your applicants to finalize terms.</p>
-                  <Button asChild variant="outline" size="sm" className="w-full">
+                  <Button asChild variant="outline" size="sm" className="w-full font-bold">
                     <Link href="/messages">View All Chats</Link>
                   </Button>
                 </div>

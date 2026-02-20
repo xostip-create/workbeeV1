@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -11,9 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -26,7 +25,6 @@ export default function SignupPage() {
   const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const brandLogo = PlaceHolderImages.find(img => img.id === 'brand-logo');
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,26 +72,20 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 relative overflow-hidden rounded-lg">
-              {brandLogo ? (
-                <Image src={brandLogo.imageUrl} alt="Zero Worries" fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full bg-primary rounded-full flex items-center justify-center text-white">
-                  <span className="font-bold">Z</span>
-                </div>
-              )}
+      <Card className="w-full max-w-md shadow-xl border-none">
+        <CardHeader className="space-y-1 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <span className="font-black text-3xl">Z</span>
             </div>
-            <CardTitle className="text-2xl font-bold">Join Zero Worries</CardTitle>
           </div>
-          <CardDescription>
+          <CardTitle className="text-3xl font-bold font-headline">Join Zero Worries</CardTitle>
+          <CardDescription className="text-base">
             Create an account to start your journey with complete peace of mind.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
@@ -102,6 +94,7 @@ export default function SignupPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
             <div className="space-y-2">
@@ -113,6 +106,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
             <div className="space-y-2">
@@ -124,35 +118,36 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                className="h-12"
               />
             </div>
             
-            <div className="space-y-3">
-              <Label>I am a...</Label>
-              <RadioGroup value={accountType} onValueChange={setAccountType} className="flex gap-4">
+            <div className="space-y-4 pt-2">
+              <Label className="text-base font-bold">I am a...</Label>
+              <RadioGroup value={accountType} onValueChange={setAccountType} className="flex gap-6">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Customer" id="customer" />
-                  <Label htmlFor="customer" className="font-normal cursor-pointer">Customer</Label>
+                  <Label htmlFor="customer" className="font-bold cursor-pointer">Customer</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Worker" id="worker" />
-                  <Label htmlFor="worker" className="font-normal cursor-pointer">Worker</Label>
+                  <Label htmlFor="worker" className="font-bold cursor-pointer">Worker</Label>
                 </div>
               </RadioGroup>
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-xs text-muted-foreground italic bg-slate-50 p-3 rounded-lg border border-slate-100">
                 {accountType === 'Customer' 
                   ? 'I want to find workers and shops for my needs.' 
                   : 'I want to offer my services to the community.'}
               </p>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+          <CardFooter className="flex flex-col gap-4 pb-8">
+            <Button type="submit" className="w-full h-12 text-lg font-bold shadow-lg" disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/login" className="text-primary hover:underline font-medium">
+              <Link href="/login" className="text-primary hover:underline font-bold">
                 Log in
               </Link>
             </div>

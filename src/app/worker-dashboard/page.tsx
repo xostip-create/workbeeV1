@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -27,12 +28,10 @@ import {
   Home
 } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function WorkerDashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -85,7 +84,6 @@ export default function WorkerDashboardPage() {
   }, [openJobsRaw]);
 
   const isLoading = isUserLoading || isProfileLoading;
-  const brandLogo = PlaceHolderImages.find(img => img.id === 'brand-logo');
 
   if (isLoading) {
     return (
@@ -123,14 +121,8 @@ export default function WorkerDashboardPage() {
       <header className="bg-white border-b sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 relative overflow-hidden rounded-lg flex items-center justify-center group-hover:opacity-80 transition-opacity">
-              {brandLogo ? (
-                <Image src={brandLogo.imageUrl} alt="Zero Worries" fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full bg-primary flex items-center justify-center text-white">
-                  <span className="font-bold">Z</span>
-                </div>
-              )}
+            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+              <span className="font-black text-lg">Z</span>
             </div>
             <div>
               <h1 className="text-lg font-bold font-headline leading-none hidden sm:block">Provider Console</h1>
@@ -159,7 +151,7 @@ export default function WorkerDashboardPage() {
           <div className="space-y-1">
             <h2 className="text-3xl font-black font-headline tracking-tight text-slate-900">Welcome, {profile.name}!</h2>
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className={`py-0.5 px-3 rounded-full border-none shadow-sm ${profile.isAvailable !== false ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
+              <Badge variant="outline" className={`py-0.5 px-3 rounded-full border-none shadow-sm font-bold ${profile.isAvailable !== false ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
                 <span className={`w-1.5 h-1.5 rounded-full mr-2 ${profile.isAvailable !== false ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`} />
                 {profile.isAvailable !== false ? 'Accepting Gigs' : 'Currently Offline'}
               </Badge>
@@ -170,13 +162,13 @@ export default function WorkerDashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="lg" className="h-12 border-slate-200">
+            <Button asChild variant="outline" size="lg" className="h-12 border-slate-200 font-bold">
               <Link href="/messages" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Negotiations
               </Link>
             </Button>
-            <Button asChild size="lg" className="h-12 shadow-lg shadow-primary/20">
+            <Button asChild size="lg" className="h-12 shadow-lg shadow-primary/20 font-bold">
               <Link href="/jobs" className="gap-2">
                 <Briefcase className="w-4 h-4" />
                 Find Gigs
@@ -258,19 +250,19 @@ export default function WorkerDashboardPage() {
                     <CardHeader className="pb-4">
                       <div className="flex justify-between items-start gap-2">
                         <CardTitle className="text-md font-bold text-slate-800 line-clamp-1">{job.title}</CardTitle>
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] shrink-0">In Progress</Badge>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] shrink-0 font-bold">In Progress</Badge>
                       </div>
                       <CardDescription className="line-clamp-2 text-xs h-8">{job.description}</CardDescription>
                     </CardHeader>
                     <Separator className="bg-slate-50" />
                     <CardFooter className="pt-4 mt-auto flex gap-2">
-                      <Button asChild variant="outline" size="sm" className="flex-1 h-9 text-xs gap-2 border-slate-200">
+                      <Button asChild variant="outline" size="sm" className="flex-1 h-9 text-xs gap-2 border-slate-200 font-bold">
                         <Link href={`/chat/${job.id}_${user.uid}`}>
                           <MessageSquare className="w-3.5 h-3.5" />
                           Chat
                         </Link>
                       </Button>
-                      <Button asChild size="sm" className="flex-1 h-9 text-xs">
+                      <Button asChild size="sm" className="flex-1 h-9 text-xs font-bold">
                         <Link href={`/jobs/${job.id}`}>
                           Details
                         </Link>
@@ -300,7 +292,7 @@ export default function WorkerDashboardPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold font-headline text-slate-900">Recent Messages</h3>
-              <Button asChild variant="link" size="sm" className="text-primary text-xs h-auto p-0">
+              <Button asChild variant="link" size="sm" className="text-primary text-xs h-auto p-0 font-bold">
                 <Link href="/messages">View Inbox</Link>
               </Button>
             </div>
@@ -310,7 +302,7 @@ export default function WorkerDashboardPage() {
                 <div className="p-6 text-center space-y-4">
                   <MessageSquare className="w-10 h-10 text-primary/20 mx-auto" />
                   <p className="text-xs text-muted-foreground">Stay in touch with your clients to finalize your next contract.</p>
-                  <Button asChild variant="outline" size="sm" className="w-full">
+                  <Button asChild variant="outline" size="sm" className="w-full font-bold">
                     <Link href="/messages">Open Messaging Inbox</Link>
                   </Button>
                 </div>
@@ -321,7 +313,7 @@ export default function WorkerDashboardPage() {
 
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold font-headline text-slate-900">New Opportunities</h3>
-              <Button asChild variant="link" size="sm" className="text-primary text-xs h-auto p-0">
+              <Button asChild variant="link" size="sm" className="text-primary text-xs h-auto p-0 font-bold">
                 <Link href="/jobs">See all</Link>
               </Button>
             </div>
