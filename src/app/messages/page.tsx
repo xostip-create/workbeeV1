@@ -45,7 +45,7 @@ function ChatRoomListItem({ room, currentUserId }: { room: any, currentUserId: s
 
   return (
     <Link href={`/chat/${room.id}`}>
-      <Card className="hover:bg-slate-50 transition-colors border-none shadow-sm group">
+      <Card className="hover:bg-white/5 transition-colors border-none shadow-sm group bg-card">
         <CardContent className="p-4 flex items-center gap-4">
           <Avatar className="h-12 w-12 border-2 border-primary/10">
             <AvatarImage src={otherUser.photoUrl} />
@@ -56,13 +56,13 @@ function ChatRoomListItem({ room, currentUserId }: { room: any, currentUserId: s
           
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start gap-2">
-              <h3 className="font-bold text-slate-900 truncate">{otherUser.name}</h3>
+              <h3 className="font-bold text-foreground truncate">{otherUser.name}</h3>
               <Badge 
                 variant="outline" 
                 className={`text-[9px] font-black uppercase tracking-tight shrink-0 ${
-                  isCompleted ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                  isHired ? 'bg-green-50 text-green-700 border-green-200' :
-                  'bg-slate-100 text-slate-600 border-slate-200'
+                  isCompleted ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                  isHired ? 'bg-primary/10 text-primary border-primary/20' :
+                  'bg-white/5 text-muted-foreground border-white/10'
                 }`}
               >
                 {isCompleted ? 'Completed' : isHired ? 'Contract' : 'Negotiation'}
@@ -76,12 +76,12 @@ function ChatRoomListItem({ room, currentUserId }: { room: any, currentUserId: s
 
           <div className="shrink-0 flex items-center gap-2">
             {isHired && !isCompleted && (
-              <div className="hidden sm:flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+              <div className="hidden sm:flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
                 <ShieldCheck className="w-3 h-3" />
                 ACTIVE
               </div>
             )}
-            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-primary transition-colors" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
         </CardContent>
       </Card>
@@ -123,14 +123,14 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20">
-      <header className="bg-white border-b sticky top-0 z-30 shadow-sm">
+    <div className="min-h-screen bg-background pb-20">
+      <header className="bg-card border-b border-white/5 sticky top-0 z-30 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-9 w-9">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-9 w-9 text-foreground">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold font-headline tracking-tight">Messages</h1>
+            <h1 className="text-xl font-bold font-headline tracking-tight text-foreground">Messages</h1>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold">
@@ -141,25 +141,25 @@ export default function MessagesPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-white/5 overflow-hidden">
           {rooms && rooms.length > 0 ? (
-            <div className="divide-y divide-slate-50">
+            <div className="divide-y divide-white/5">
               {rooms.map((room) => (
                 <ChatRoomListItem key={room.id} room={room} currentUserId={user.uid} />
               ))}
             </div>
           ) : (
             <div className="text-center py-32 space-y-4">
-              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
-                <MessageSquare className="w-10 h-10 text-slate-200" />
+              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+                <MessageSquare className="w-10 h-10 text-muted-foreground/20" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">Inbox Empty</h2>
-                <p className="text-sm text-slate-400 max-w-xs mx-auto">
+                <h2 className="text-xl font-black text-foreground uppercase tracking-widest">Inbox Empty</h2>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
                   Start a negotiation by applying for a job or contacting a professional provider.
                 </p>
               </div>
-              <Button asChild variant="outline" className="mt-4">
+              <Button asChild variant="outline" className="mt-4 border-white/10 text-foreground">
                 <Link href="/jobs">Browse Opportunities</Link>
               </Button>
             </div>
@@ -167,29 +167,29 @@ export default function MessagesPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-blue-50 border-blue-100 shadow-none">
+          <Card className="bg-blue-500/5 border-blue-500/10 shadow-none">
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-900">
-                <Clock className="w-4 h-4 text-blue-600" />
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-400">
+                <Clock className="w-4 h-4 text-blue-500" />
                 Response Time
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <p className="text-[11px] text-blue-800 leading-relaxed font-medium">
+              <p className="text-[11px] text-blue-300 leading-relaxed font-medium">
                 Fast responses build trust. Users who reply within 30 minutes are more likely to secure a contract.
               </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-green-50 border-green-100 shadow-none">
+          <Card className="bg-primary/5 border-primary/10 shadow-none">
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-bold flex items-center gap-2 text-green-900">
-                <Banknote className="w-4 h-4 text-green-600" />
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-primary">
+                <Banknote className="w-4 h-4 text-primary" />
                 Price Proposals
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <p className="text-[11px] text-green-800 leading-relaxed font-medium">
+              <p className="text-[11px] text-primary/80 leading-relaxed font-medium">
                 Always use the official "OFFER PRICE" tool in chats to ensure your funds are protected by Zero Worries Escrow.
               </p>
             </CardContent>

@@ -255,8 +255,8 @@ export default function ChatPage() {
        }, { merge: true });
     } else {
       return (
-        <div className="flex flex-col h-screen items-center justify-center p-4 text-center space-y-4">
-          <h2 className="text-xl font-bold">Privacy Restriction</h2>
+        <div className="flex flex-col h-screen items-center justify-center p-4 text-center space-y-4 bg-background">
+          <h2 className="text-xl font-bold text-foreground">Privacy Restriction</h2>
           <p className="text-muted-foreground">This secure channel is only for assigned participants.</p>
           <Button onClick={() => router.push('/')}>Return Home</Button>
         </div>
@@ -269,39 +269,39 @@ export default function ChatPage() {
   const isHired = job?.selectedApplicantId === workerIdFromPath;
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
-      <header className="flex flex-col border-b bg-white sticky top-0 z-10 shadow-sm">
+    <div className="flex flex-col h-screen bg-background">
+      <header className="flex flex-col border-b border-white/5 bg-card sticky top-0 z-10 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-9 w-9">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-9 w-9 text-foreground hover:bg-white/5">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <Avatar className="w-10 h-10 border shadow-sm">
+            <Avatar className="w-10 h-10 border border-white/10 shadow-sm">
               <AvatarImage src={otherUserProfile?.photoUrl} />
               <AvatarFallback className="bg-primary/10 text-primary font-bold">
                 {otherParticipantName.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="text-sm font-bold leading-none">{otherParticipantName}</h2>
-              <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+              <h2 className="text-sm font-bold leading-none text-foreground">{otherParticipantName}</h2>
+              <div className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
                 {isPaid ? (
-                  <span className="text-green-600 font-black flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                  <span className="text-primary font-black flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
                     <CheckCircle2 className="w-2.5 h-2.5" />
                     FUNDED
                   </span>
                 ) : isHired ? (
-                  <span className="flex items-center gap-1 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                  <span className="flex items-center gap-1 font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
                     <ShieldCheck className="w-2.5 h-2.5" />
                     HIRED
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                  <span className="flex items-center gap-1 font-bold text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
                     <Clock className="w-2.5 h-2.5" />
                     NEGOTIATING
                   </span>
                 )}
-              </p>
+              </div>
             </div>
           </div>
           
@@ -314,33 +314,33 @@ export default function ChatPage() {
                     OFFER PRICE
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="bg-card border-white/10">
                   <DialogHeader>
-                    <DialogTitle>Make a Final Offer</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-foreground">Make a Final Offer</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
                       Propose the final amount for this service. This will be the amount held in escrow.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="amount">Amount (₦)</Label>
+                      <Label htmlFor="amount" className="text-foreground">Amount (₦)</Label>
                       <Input 
                         id="amount" 
                         type="number" 
                         placeholder="e.g. 15000" 
                         value={proposalAmount}
                         onChange={(e) => setProposalAmount(e.target.value)}
-                        className="h-12 text-xl font-bold"
+                        className="h-12 text-xl font-bold bg-background border-white/10 text-foreground"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="desc">Scope / Notes</Label>
+                      <Label htmlFor="desc" className="text-foreground">Scope / Notes</Label>
                       <Textarea 
                         id="desc" 
                         placeholder="Explain exactly what is included in this price..." 
                         value={proposalDesc}
                         onChange={(e) => setProposalDesc(e.target.value)}
-                        className="min-h-[100px]"
+                        className="min-h-[100px] bg-background border-white/10 text-foreground"
                       />
                     </div>
                   </div>
@@ -352,7 +352,7 @@ export default function ChatPage() {
             )}
             
             {isCustomer && !isHired && isPaid && (
-              <Button size="sm" onClick={handleHireWorker} className="h-8 font-black gap-2 bg-green-600 hover:bg-green-700 shadow-md shadow-green-100">
+              <Button size="sm" onClick={handleHireWorker} className="h-8 font-black gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
                 <UserCheck className="w-4 h-4" />
                 OFFICIALLY HIRE
               </Button>
@@ -360,7 +360,7 @@ export default function ChatPage() {
           </div>
         </div>
         
-        <div className="px-4 py-1.5 border-t flex items-center gap-4 bg-slate-50/50">
+        <div className="px-4 py-1.5 border-t border-white/5 flex items-center gap-4 bg-white/5">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -389,22 +389,21 @@ export default function ChatPage() {
             <Card className={cn(
               "border-2 shadow-xl mb-6 overflow-hidden transition-all",
               activeProposal.status === 'Accepted' 
-                ? "border-green-600 bg-green-50/50 ring-4 ring-green-500/5" 
+                ? "border-primary bg-primary/5 ring-4 ring-primary/5" 
                 : "border-primary/30 bg-primary/5"
             )}>
                <CardHeader className={cn(
-                 "py-3 px-5 flex flex-row items-center justify-between border-b",
-                 activeProposal.status === 'Accepted' ? "bg-green-100" : "bg-primary/10"
+                 "py-3 px-5 flex flex-row items-center justify-between border-b border-white/10",
+                 activeProposal.status === 'Accepted' ? "bg-primary/20" : "bg-primary/10"
                )}>
                  <div className="flex items-center gap-2">
                     {activeProposal.status === 'Accepted' ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-700" />
+                      <CheckCircle2 className="w-5 h-5 text-primary" />
                     ) : (
                       <Banknote className="w-5 h-5 text-primary" />
                     )}
                     <CardTitle className={cn(
-                      "text-xs font-black uppercase tracking-[0.1em]",
-                      activeProposal.status === 'Accepted' ? "text-green-800" : "text-primary"
+                      "text-xs font-black uppercase tracking-[0.1em] text-foreground"
                     )}>
                       {activeProposal.status === 'Accepted' ? 'Agreed Price' : 'Current Proposal'}
                     </CardTitle>
@@ -413,7 +412,7 @@ export default function ChatPage() {
                     variant={activeProposal.status === 'Accepted' ? 'default' : 'outline'}
                     className={cn(
                       "text-[9px] font-black uppercase px-3",
-                      activeProposal.status === 'Accepted' ? "bg-green-600 border-none" : "bg-white border-primary/20 text-primary"
+                      activeProposal.status === 'Accepted' ? "bg-primary border-none text-primary-foreground" : "bg-background border-primary/20 text-primary"
                     )}
                   >
                     {activeProposal.status}
@@ -422,13 +421,12 @@ export default function ChatPage() {
                <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                   <div className="space-y-1.5 flex-1">
                     <div className={cn(
-                      "text-4xl font-black tracking-tighter",
-                      activeProposal.status === 'Accepted' ? "text-green-800" : "text-primary"
+                      "text-4xl font-black tracking-tighter text-foreground"
                     )}>
                       ₦{activeProposal.amount.toLocaleString()}
                     </div>
                     {activeProposal.description && (
-                      <p className="text-xs text-slate-600 italic font-medium">"{activeProposal.description}"</p>
+                      <p className="text-xs text-muted-foreground italic font-medium">"{activeProposal.description}"</p>
                     )}
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-tight mt-2">
                       Proposed by {activeProposal.proposerId === user?.uid ? 'You' : otherParticipantName}
@@ -436,7 +434,7 @@ export default function ChatPage() {
                   </div>
                   
                   {activeProposal.status === 'Accepted' && !isPaid && isCustomer && (
-                    <Button asChild size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 font-black h-14 px-10 rounded-2xl animate-bounce">
+                    <Button asChild size="lg" className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 font-black h-14 px-10 rounded-2xl animate-bounce">
                       <Link href={`/payments/${jobId}`} className="gap-2">
                         <ShieldCheck className="w-5 h-5" />
                         SECURE PAY NOW
@@ -445,14 +443,14 @@ export default function ChatPage() {
                   )}
 
                   {activeProposal.status === 'Accepted' && isPaid && !isHired && isCustomer && (
-                    <Button onClick={handleHireWorker} size="lg" className="w-full md:w-auto bg-green-600 hover:bg-green-700 font-black h-14 px-10 rounded-2xl">
+                    <Button onClick={handleHireWorker} size="lg" className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-black h-14 px-10 rounded-2xl">
                        OFFICIALLY HIRE
                     </Button>
                   )}
                </CardContent>
                {activeProposal.recipientId === user?.uid && activeProposal.status === 'Pending' && (
-                 <CardFooter className="bg-white p-3 flex gap-3 border-t">
-                    <Button variant="outline" size="lg" className="flex-1 h-12 font-black text-green-700 border-green-200 bg-green-50 hover:bg-green-100" onClick={() => handleRespondToProposal(activeProposal.id, 'Accepted')}>
+                 <CardFooter className="bg-background/50 p-3 flex gap-3 border-t border-white/10">
+                    <Button variant="outline" size="lg" className="flex-1 h-12 font-black text-primary border-primary/20 bg-primary/5 hover:bg-primary/10" onClick={() => handleRespondToProposal(activeProposal.id, 'Accepted')}>
                       <Check className="w-4 h-4 mr-2" /> ACCEPT
                     </Button>
                     <Button variant="outline" size="lg" className="flex-1 h-12 font-black text-destructive border-destructive/10 hover:bg-destructive/5" onClick={() => handleRespondToProposal(activeProposal.id, 'Rejected')}>
@@ -464,10 +462,10 @@ export default function ChatPage() {
           )}
 
           {activeProposal?.status === 'Accepted' && !isPaid && (
-            <Alert className="mb-6 bg-blue-50 border-blue-200 shadow-md">
-              <Lock className="h-5 w-5 text-blue-600" />
-              <AlertTitle className="text-blue-900 text-sm font-black uppercase tracking-tight">Funding Required to Hire</AlertTitle>
-              <AlertDescription className="text-blue-800 text-xs font-medium leading-tight mt-1">
+            <Alert className="mb-6 bg-primary/5 border-primary/20 shadow-md">
+              <Lock className="h-5 w-5 text-primary" />
+              <AlertTitle className="text-primary text-sm font-black uppercase tracking-tight">Funding Required to Hire</AlertTitle>
+              <AlertDescription className="text-muted-foreground text-xs font-medium leading-tight mt-1">
                 {isCustomer 
                   ? "As per Zero Worries safety rules, you must fund the escrow before you can officially hire this worker. This confirms the task and protects both parties."
                   : "Waiting for the customer to deposit the agreed funds. Once paid, they will be able to officially hire you and contact details will unlock."}
@@ -476,20 +474,20 @@ export default function ChatPage() {
           )}
 
           {activeProposal?.status === 'Accepted' && isPaid && !isHired && isCustomer && (
-             <Alert className="mb-6 bg-green-50 border-green-200 shadow-md">
-               <UserCheck className="h-5 w-5 text-green-600" />
-               <AlertTitle className="text-green-900 text-sm font-black uppercase tracking-tight">Payment Confirmed!</AlertTitle>
-               <AlertDescription className="text-green-800 text-xs font-medium leading-tight mt-1">
+             <Alert className="mb-6 bg-primary/10 border-primary/20 shadow-md">
+               <UserCheck className="h-5 w-5 text-primary" />
+               <AlertTitle className="text-primary text-sm font-black uppercase tracking-tight">Payment Confirmed!</AlertTitle>
+               <AlertDescription className="text-muted-foreground text-xs font-medium leading-tight mt-1">
                  Funds are now secured in escrow. Click <strong>"OFFICIALLY HIRE"</strong> above to assign the worker and share contact details.
                </AlertDescription>
              </Alert>
           )}
 
           {!isHired && isCustomer && !activeProposal && (
-             <Alert className="mb-6 bg-amber-50 border-amber-200 shadow-sm border-l-4 border-l-amber-500">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
-                <AlertTitle className="text-amber-900 text-sm font-black uppercase tracking-tight">Agreement Phase</AlertTitle>
-                <AlertDescription className="text-amber-800 text-xs font-medium leading-tight mt-1">
+             <Alert className="mb-6 bg-primary/5 border-primary/20 shadow-sm border-l-4 border-l-primary">
+                <AlertCircle className="h-5 w-5 text-primary" />
+                <AlertTitle className="text-foreground text-sm font-black uppercase tracking-tight">Agreement Phase</AlertTitle>
+                <AlertDescription className="text-muted-foreground text-xs font-medium leading-tight mt-1">
                   Discuss terms and finalize a price. Once agreed, you will need to fund the job before officially hiring.
                 </AlertDescription>
              </Alert>
@@ -497,7 +495,7 @@ export default function ChatPage() {
 
           <div className="space-y-4">
             {messages?.length === 0 && (
-              <div className="text-center py-20 opacity-20">
+              <div className="text-center py-20 opacity-20 text-foreground">
                 <MessageCircle className="w-16 h-16 mx-auto mb-4" />
                 <p className="text-lg font-black tracking-widest uppercase">Start the Negotiation</p>
               </div>
@@ -513,12 +511,12 @@ export default function ChatPage() {
                     "max-w-[85%] px-5 py-3 rounded-3xl text-[14px] shadow-sm leading-relaxed font-medium",
                     msg.senderId === user?.uid
                       ? 'bg-primary text-primary-foreground rounded-tr-none'
-                      : 'bg-white border text-slate-800 rounded-tl-none border-slate-200'
+                      : 'bg-card border text-foreground rounded-tl-none border-white/10'
                   )}
                 >
                   {msg.text}
                 </div>
-                <span className="text-[9px] text-slate-400 mt-2 px-2 font-bold uppercase tracking-tight">
+                <span className="text-[9px] text-muted-foreground mt-2 px-2 font-bold uppercase tracking-tight">
                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -528,18 +526,18 @@ export default function ChatPage() {
         </div>
       </ScrollArea>
 
-      <footer className="p-4 border-t bg-white shadow-lg">
+      <footer className="p-4 border-t border-white/5 bg-card shadow-lg">
         <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto flex items-center gap-3">
           <Input 
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             placeholder="Discuss specific terms..." 
-            className="flex-1 bg-slate-50 border-slate-200 h-14 rounded-2xl px-6 focus-visible:ring-primary font-medium"
+            className="flex-1 bg-background border-white/10 h-14 rounded-2xl px-6 focus-visible:ring-primary font-medium text-foreground"
           />
           <Button 
             type="submit" 
             size="icon" 
-            className="rounded-2xl h-14 w-14 shadow-xl shadow-primary/20" 
+            className="rounded-2xl h-14 w-14 shadow-xl shadow-primary/20 bg-primary text-primary-foreground" 
             disabled={!messageText.trim()}
           >
             <Send className="w-6 h-6" />
