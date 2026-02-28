@@ -30,7 +30,6 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Fetch user profile to determine redirect
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       const profile = userDoc.data();
 
@@ -59,15 +58,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md shadow-xl border-none">
+      <Card className="w-full max-w-md shadow-2xl border-white/5 bg-card">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
               <span className="font-black text-3xl">Z</span>
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold font-headline">Welcome Back</CardTitle>
-          <CardDescription className="text-base">
+          <CardTitle className="text-3xl font-bold font-headline text-primary glow-text">Welcome Back</CardTitle>
+          <CardDescription className="text-base text-muted-foreground">
             Enter your email and password to access Zero Worries
           </CardDescription>
         </CardHeader>
@@ -82,7 +81,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-12"
+                className="h-12 bg-background border-white/10 text-foreground"
               />
             </div>
             <div className="space-y-2">
@@ -95,12 +94,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-12"
+                className="h-12 bg-background border-white/10 text-foreground"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4 pb-8">
-            <Button type="submit" className="w-full h-12 text-lg font-bold shadow-lg" disabled={isLoading}>
+            <Button type="submit" className="w-full h-12 text-lg font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20" disabled={isLoading}>
               {isLoading ? 'Logging in...' : 'Login'}
             </Button>
             <div className="text-center text-sm text-muted-foreground">

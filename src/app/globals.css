@@ -5,47 +5,26 @@
 
 @layer base {
   :root {
-    --background: 204 83% 94%; /* #E3F2FD */
-    --foreground: 217 19% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 217 19% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 19% 10%;
-    --primary: 217 89% 61%; /* #4285F4 */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 136 52% 44%; /* #34A853 as a secondary/accent fallback */
-    --secondary-foreground: 0 0% 100%;
-    --muted: 204 40% 90%;
-    --muted-foreground: 217 19% 40%;
-    --accent: 136 52% 44%; /* #34A853 */
-    --accent-foreground: 0 0% 100%;
+    --background: 158 58% 4%; /* Deep dark green-black */
+    --foreground: 158 20% 98%;
+    --card: 158 50% 7%;
+    --card-foreground: 158 20% 98%;
+    --popover: 158 58% 4%;
+    --popover-foreground: 158 20% 98%;
+    --primary: 150 100% 50%; /* Vibrant Neon Green */
+    --primary-foreground: 158 58% 4%;
+    --secondary: 158 30% 12%;
+    --secondary-foreground: 158 20% 98%;
+    --muted: 158 30% 12%;
+    --muted-foreground: 158 20% 70%;
+    --accent: 160 100% 60%;
+    --accent-foreground: 158 58% 4%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 19% 80%;
-    --input: 217 19% 80%;
-    --ring: 217 89% 61%;
+    --destructive-foreground: 158 20% 98%;
+    --border: 158 30% 15%;
+    --input: 158 30% 15%;
+    --ring: 150 100% 50%;
     --radius: 0.75rem;
-  }
-  .dark {
-    --background: 217 19% 10%;
-    --foreground: 210 40% 98%;
-    --card: 217 19% 15%;
-    --card-foreground: 210 40% 98%;
-    --popover: 217 19% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 89% 61%;
-    --primary-foreground: 217 19% 10%;
-    --secondary: 136 52% 44%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 19% 20%;
-    --muted-foreground: 217 19% 70%;
-    --accent: 136 52% 44%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 19% 25%;
-    --input: 217 19% 25%;
-    --ring: 217 89% 61%;
   }
 }
 
@@ -59,4 +38,12 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline;
   }
+}
+
+/* Custom glow effects */
+.glow-primary {
+  box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.4);
+}
+.glow-text {
+  text-shadow: 0 0 10px hsl(var(--primary) / 0.5);
 }
