@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -25,10 +26,11 @@
         },
         "accountType": {
           "type": "string",
-          "description": "The type of user account: 'Worker' or 'Customer'.",
+          "description": "The type of user account: 'Worker', 'Customer', or 'Seller'.",
           "enum": [
             "Worker",
-            "Customer"
+            "Customer",
+            "Seller"
           ]
         },
         "status": {
@@ -73,6 +75,39 @@
         "name",
         "accountType"
       ]
+    },
+    "Store": {
+      "title": "Store",
+      "type": "object",
+      "description": "Represents a seller's shop in the marketplace.",
+      "properties": {
+        "id": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "address": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "name"]
+    },
+    "Product": {
+      "title": "Product",
+      "type": "object",
+      "description": "An item listed for sale in a store.",
+      "properties": {
+        "id": { "type": "string" },
+        "storeId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["storeId", "sellerId", "name", "price"]
     },
     "Job": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -378,6 +413,18 @@
         "$ref": "#/backend/entities/Payment"
       },
       "description": "Stores payment transaction records."
+    },
+    "/shops/{shopId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Store"
+      },
+      "description": "Stores shop information for sellers."
+    },
+    "/shops/{shopId}/products/{productId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Product"
+      },
+      "description": "Stores products listed in a shop."
     }
   }
 }

@@ -56,6 +56,8 @@ export default function SignupPage() {
         router.push('/worker-dashboard');
       } else if (accountType === 'Customer') {
         router.push('/customer-dashboard');
+      } else if (accountType === 'Seller') {
+        router.push('/shops/manage');
       } else {
         router.push('/');
       }
@@ -124,20 +126,26 @@ export default function SignupPage() {
             
             <div className="space-y-4 pt-2">
               <Label className="text-base font-bold">I am a...</Label>
-              <RadioGroup value={accountType} onValueChange={setAccountType} className="flex gap-6">
+              <RadioGroup value={accountType} onValueChange={setAccountType} className="grid grid-cols-3 gap-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Customer" id="customer" />
-                  <Label htmlFor="customer" className="font-bold cursor-pointer">Customer</Label>
+                  <Label htmlFor="customer" className="font-bold cursor-pointer text-xs">Buyer</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Worker" id="worker" />
-                  <Label htmlFor="worker" className="font-bold cursor-pointer">Worker</Label>
+                  <Label htmlFor="worker" className="font-bold cursor-pointer text-xs">Worker</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Seller" id="seller" />
+                  <Label htmlFor="seller" className="font-bold cursor-pointer text-xs">Seller</Label>
                 </div>
               </RadioGroup>
-              <p className="text-xs text-muted-foreground italic bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <p className="text-[10px] text-muted-foreground italic bg-slate-50 p-2 rounded-lg border border-slate-100">
                 {accountType === 'Customer' 
-                  ? 'I want to find workers and shops for my needs.' 
-                  : 'I want to offer my services to the community.'}
+                  ? 'I want to hire experts and buy from shops.' 
+                  : accountType === 'Worker' 
+                    ? 'I want to provide manual or expert services.'
+                    : 'I want to sell items and manage a shop.'}
               </p>
             </div>
           </CardContent>
