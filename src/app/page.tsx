@@ -103,7 +103,7 @@ export default function LandingPage() {
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-bold leading-none">{profile?.name || 'User'}</p>
+                            <p className="text-sm font-bold leading-none text-foreground">{profile?.name || 'User'}</p>
                             <Badge variant="outline" className="text-[10px] py-0 px-1 border-primary/30 text-primary">
                               {profile?.accountType}
                             </Badge>
@@ -139,13 +139,13 @@ export default function LandingPage() {
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem asChild>
-                        <Link href="/messages" className="cursor-pointer w-full flex items-center font-bold">
+                        <Link href="/messages" className="cursor-pointer w-full flex items-center font-bold text-foreground">
                           <MessageSquare className="mr-2 h-4 w-4" />
                           <span>Inbox</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/profile" className="cursor-pointer w-full flex items-center">
+                        <Link href="/profile" className="cursor-pointer w-full flex items-center text-foreground">
                           <UserIcon className="mr-2 h-4 w-4" />
                           <span>Profile</span>
                         </Link>
@@ -238,7 +238,7 @@ export default function LandingPage() {
                 <h2 className="text-3xl font-bold font-headline text-primary glow-text">Explore Zero Worries</h2>
                 <p className="text-muted-foreground">Find exactly what you need with our community-driven marketplace.</p>
               </div>
-              <Button asChild variant="outline" className="shrink-0 border-white/10 hover:bg-white/5">
+              <Button asChild variant="outline" className="shrink-0 border-white/10 hover:bg-white/5 text-foreground">
                 <Link href="/shops">Browse Marketplace</Link>
               </Button>
             </div>

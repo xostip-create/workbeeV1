@@ -83,7 +83,7 @@ export default function CustomerDashboardPage() {
           This workspace is designed for customers to manage their requests.
         </p>
         <div className="flex gap-4">
-          <Button onClick={() => router.push('/')} variant="outline" className="border-white/10">Back to Home</Button>
+          <Button onClick={() => router.push('/')} variant="outline" className="border-white/10 text-foreground">Back to Home</Button>
           <Button onClick={() => router.push('/worker-dashboard')}>Worker Console</Button>
         </div>
       </div>
@@ -104,8 +104,8 @@ export default function CustomerDashboardPage() {
               <span className="font-black text-lg">Z</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold font-headline leading-none hidden sm:block">Customer Hub</h1>
-              <h1 className="text-lg font-bold font-headline leading-none sm:hidden">Zero</h1>
+              <h1 className="text-lg font-bold font-headline leading-none hidden sm:block text-foreground">Customer Hub</h1>
+              <h1 className="text-lg font-bold font-headline leading-none sm:hidden text-foreground">Zero</h1>
               <p className="text-[10px] text-primary font-bold uppercase mt-0.5 tracking-tight group-hover:underline">Zero Worries Home</p>
             </div>
           </Link>
@@ -132,7 +132,7 @@ export default function CustomerDashboardPage() {
             <p className="text-sm text-muted-foreground">Manage your help requests and track project progress.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button asChild variant="outline" size="lg" className="h-12 border-white/10 font-bold bg-card text-foreground">
+            <Button asChild variant="outline" size="lg" className="h-12 border-white/10 font-bold bg-card text-foreground hover:bg-white/5">
               <Link href="/messages" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Messages
@@ -234,7 +234,7 @@ export default function CustomerDashboardPage() {
                     </CardHeader>
                     <Separator className="bg-white/5" />
                     <CardFooter className="pt-4 mt-auto flex gap-2">
-                      <Button asChild variant="outline" size="sm" className="flex-1 h-9 text-xs gap-2 border-white/10 hover:bg-white/5 font-bold">
+                      <Button asChild variant="outline" size="sm" className="flex-1 h-9 text-xs gap-2 border-white/10 hover:bg-white/5 font-bold text-foreground">
                         <Link href={job.status === 'In Progress' ? `/chat/${job.id}` : `/jobs/${job.id}`}>
                           {job.status === 'In Progress' ? <MessageSquare className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           {job.status === 'In Progress' ? 'Chat' : 'Manage'}
@@ -259,7 +259,7 @@ export default function CustomerDashboardPage() {
                     <p className="font-bold text-foreground">No active requests</p>
                     <p className="text-sm text-muted-foreground">Post a job to find local professionals.</p>
                   </div>
-                  <Button asChild variant="outline" size="sm" className="border-white/10">
+                  <Button asChild variant="outline" size="sm" className="border-white/10 text-foreground">
                     <Link href="/post-job">Post First Job</Link>
                   </Button>
                 </CardContent>
@@ -275,7 +275,7 @@ export default function CustomerDashboardPage() {
                 <div className="p-6 text-center space-y-4">
                   <MessageSquare className="w-10 h-10 text-primary/20 mx-auto" />
                   <p className="text-xs text-muted-foreground">Keep the conversation going with your applicants.</p>
-                  <Button asChild variant="outline" size="sm" className="w-full font-bold border-white/10">
+                  <Button asChild variant="outline" size="sm" className="w-full font-bold border-white/10 text-foreground">
                     <Link href="/messages">View All Chats</Link>
                   </Button>
                 </div>
